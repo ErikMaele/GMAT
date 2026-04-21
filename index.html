@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GMAT Practice Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-copy">
+        <p class="eyebrow">Erik's Oxford run</p>
+        <h1>Earn the room.</h1>
+        <p class="header-meta">
+          Every set is a small vote for the life you are trying to enter.
+        </p>
+        <div class="hero-quote">
+          <span>Oscar Wilde, Magdalen College</span>
+          <q>The truth is rarely pure and never simple.</q>
+        </div>
+      </div>
+      <div class="dream-lockup" aria-label="Oxford target">
+        <div class="score-lockup">
+          <span class="score-current">655</span>
+          <span class="score-arrow">to</span>
+          <span class="score-target">745</span>
+        </div>
+        <div class="dream-caption">
+          <strong>Oxford is the why.</strong>
+          <span>TTP and mistake repair are today's route.</span>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabbar" aria-label="Primary">
+      <button class="tab-button active" data-tab="dashboard" aria-pressed="true">
+        <span class="tab-icon" aria-hidden="true">01</span>
+        Today
+      </button>
+      <button class="tab-button" data-tab="import" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">02</span>
+        Import
+      </button>
+      <button class="tab-button" data-tab="review" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">03</span>
+        Fix
+      </button>
+      <button class="tab-button" data-tab="log" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">04</span>
+        Log
+      </button>
+      <button class="tab-button" data-tab="mocks" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">05</span>
+        Mocks
+      </button>
+      <button class="tab-button" data-tab="settings" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">06</span>
+        Data
+      </button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="dashboard" aria-labelledby="dashboard-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Today in 90 seconds</p>
+            <h2 id="dashboard-title">Command center</h2>
+          </div>
+          <p class="today-date" id="today-date"></p>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="today-card assignment-card">
+            <div class="card-heading">
+              <span class="marker marker-coral"></span>
+              <h3 id="today-mode">Loading</h3>
+            </div>
+            <div class="assignment-hero" id="assignment-hero"></div>
+            <dl class="assignment-spec" id="assignment-spec"></dl>
+            <ol class="action-list compact-list" id="today-actions"></ol>
+            <div class="routine-strip" id="routine-strip"></div>
+            <div class="quick-actions">
+              <button class="primary-button" type="button" data-jump="import">Import Result</button>
+              <button class="ghost-button" type="button" data-jump="review">Fix Mistakes</button>
+            </div>
+          </article>
+
+          <div class="metric-grid" id="metric-grid"></div>
+        </div>
+
+        <section class="dream-panel" aria-label="Oxford motivation">
+          <div class="dream-image">
+            <img src="assets/christ-church-meadow.jpg" alt="Christ Church Meadow in Oxford">
+          </div>
+          <div class="dream-copy">
+            <p class="eyebrow">Remember the prize</p>
+            <h2>Radcliffe Square, the meadow, the old libraries. Make the score feel smaller than the dream.</h2>
+            <p>
+              Wilde arrived at Magdalen as an undergraduate in 1874 and left as an Oxford figure. The point is not to admire the place from far away. It is to build the evidence that you belong there.
+            </p>
+          </div>
+          <figure class="alumni-card">
+            <img src="assets/oscar-wilde.jpg" alt="Oscar Wilde portrait by Napoleon Sarony">
+            <figcaption>
+              <strong>Oscar Wilde</strong>
+              <span>Magdalen College, Oxford</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <section class="content-band">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">Priority engine</p>
+              <h2>What needs reps now</h2>
+            </div>
+          </div>
+          <div class="topic-table" id="topic-table"></div>
+        </section>
+
+        <section class="split-layout">
+          <article class="chart-card">
+            <div class="card-heading">
+              <span class="marker marker-green"></span>
+              <h3>Readiness</h3>
+            </div>
+            <div class="readiness-chart" id="readiness-chart"></div>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <span class="marker marker-amber"></span>
+              <h3>Next mock</h3>
+            </div>
+            <div class="next-mock" id="next-mock"></div>
+          </article>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="import" aria-labelledby="import-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Bridge</p>
+            <h2 id="import-title">TTP result import</h2>
+          </div>
+          <p class="subtle">Screenshot, paste text, confirm once.</p>
+        </div>
+
+        <div class="import-layout">
+          <article class="import-card">
+            <div class="drop-zone" id="drop-zone">
+              <input id="screenshot-input" type="file" accept="image/*">
+              <strong>Drop or choose a TTP result screenshot</strong>
+              <span>OCR runs in the browser when the engine is available. Nothing logs into TTP.</span>
+            </div>
+            <img class="screenshot-preview" id="screenshot-preview" alt="Imported screenshot preview">
+            <div class="button-row">
+              <button class="primary-button" id="run-ocr" type="button">Run OCR</button>
+              <button class="ghost-button" id="clear-import" type="button">Clear</button>
+            </div>
+            <p class="status-line" id="ocr-status"></p>
+          </article>
+
+          <article class="import-card">
+            <h3>Paste fallback</h3>
+            <textarea id="import-text" rows="13" placeholder="Paste visible TTP or GMAT Club result text here. Example: TTP Algebra Word Problems, Hard, 15 questions, 11 correct, 31 minutes, 4 wrong."></textarea>
+            <button class="primary-button" id="parse-import" type="button">Parse Result</button>
+          </article>
+        </div>
+
+        <section class="content-band import-review-wrap">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">Confirm</p>
+              <h2>Review parsed batch</h2>
+            </div>
+            <span class="confidence-pill" id="import-confidence">Waiting</span>
+          </div>
+
+          <form class="data-form import-review-form" id="import-review-form">
+            <div class="inline-fields">
+              <label>
+                Date
+                <input type="date" name="date" required>
+              </label>
+              <label>
+                Source
+                <select name="source">
+                  <option>TTP</option>
+                  <option>GMAT Club</option>
+                  <option>mba.com Official</option>
+                  <option>Official Guide</option>
+                  <option>Custom</option>
+                </select>
+              </label>
+              <label>
+                Set type
+                <select name="setType">
+                  <option>Chapter test</option>
+                  <option>Custom test</option>
+                  <option>Review quiz</option>
+                  <option>Diagnostic</option>
+                  <option>Mock review</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Source module / visible label
+              <input type="text" name="sourceLabel" placeholder="TTP Algebra Word Problems">
+            </label>
+
+            <div class="inline-fields">
+              <label>
+                Normalized topic
+                <select name="topic" required></select>
+              </label>
+              <label>
+                Difficulty
+                <select name="difficulty">
+                  <option>Mixed</option>
+                  <option>Easy</option>
+                  <option>Medium</option>
+                  <option>Hard</option>
+                </select>
+              </label>
+              <label>
+                Failure cause
+                <select name="failureCause" required></select>
+              </label>
+            </div>
+
+            <div class="inline-fields">
+              <label>
+                Questions
+                <input type="number" name="questions" min="1" max="120" value="15" required>
+              </label>
+              <label>
+                Correct
+                <input type="number" name="correct" min="0" max="120" value="10" required>
+              </label>
+              <label>
+                Minutes
+                <input type="number" name="minutes" min="1" max="300" value="30" required>
+              </label>
+            </div>
+
+            <div class="inline-fields">
+              <label>
+                Wrong
+                <input type="number" name="wrong" min="0" max="120" value="5" required>
+              </label>
+              <label>
+                Uncertain
+                <input type="number" name="uncertain" min="0" max="120" value="0">
+              </label>
+              <label>
+                Avg seconds/q
+                <input type="number" name="avgSeconds" min="10" max="600" value="120" required>
+              </label>
+            </div>
+
+            <label>
+              Fix rule
+              <textarea name="fixRule" rows="3" placeholder="What should future-me do differently on this question family?"></textarea>
+            </label>
+
+            <div class="duplicate-warning" id="duplicate-warning"></div>
+            <button class="primary-button warm" type="submit">Save Import Batch</button>
+          </form>
+        </section>
+
+        <section class="content-band">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2>Recent imports</h2>
+            </div>
+          </div>
+          <div class="session-list" id="import-list"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="review" aria-labelledby="review-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Mistake repair</p>
+            <h2 id="review-title">Due queue</h2>
+          </div>
+          <button class="ghost-button" id="seed-error" type="button">Add Sample Item</button>
+        </div>
+        <div class="review-grid" id="review-grid"></div>
+      </section>
+
+      <section class="tab-panel" id="log" aria-labelledby="log-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Manual fallback</p>
+            <h2 id="log-title">Quick session log</h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <form class="data-form" id="session-form">
+            <h3>Session</h3>
+            <label>
+              Date
+              <input type="date" name="date" required>
+            </label>
+            <label>
+              Section
+              <select name="section" required></select>
+            </label>
+            <label>
+              Topic
+              <select name="topic" required></select>
+            </label>
+            <label>
+              Source
+              <select name="source" required>
+                <option>TTP</option>
+                <option>GMAT Club</option>
+                <option>mba.com Official</option>
+                <option>Official Guide</option>
+                <option>Custom</option>
+              </select>
+            </label>
+            <div class="inline-fields">
+              <label>
+                Questions
+                <input type="number" name="questions" min="1" max="120" value="15" required>
+              </label>
+              <label>
+                Correct
+                <input type="number" name="correct" min="0" max="120" value="10" required>
+              </label>
+              <label>
+                Minutes
+                <input type="number" name="minutes" min="1" max="300" value="30" required>
+              </label>
+            </div>
+            <div class="inline-fields">
+              <label>
+                Difficulty
+                <select name="difficulty">
+                  <option>Mixed</option>
+                  <option>Easy</option>
+                  <option>Medium</option>
+                  <option>Hard</option>
+                </select>
+              </label>
+              <label>
+                Focus
+                <select name="focus">
+                  <option>Timed drill</option>
+                  <option>Concept work</option>
+                  <option>Error redo</option>
+                  <option>Mock review</option>
+                </select>
+              </label>
+              <label>
+                Uncertain
+                <input type="number" name="uncertain" min="0" max="120" value="0">
+              </label>
+            </div>
+            <label>
+              Notes
+              <textarea name="notes" rows="4" placeholder="Pattern, pacing, or concept clue"></textarea>
+            </label>
+            <button class="primary-button" type="submit">Save Session</button>
+          </form>
+
+          <form class="data-form accent-form" id="error-form">
+            <h3>Mistake card</h3>
+            <label>
+              Date
+              <input type="date" name="date" required>
+            </label>
+            <label>
+              Section
+              <select name="section" required></select>
+            </label>
+            <label>
+              Topic
+              <select name="topic" required></select>
+            </label>
+            <label>
+              Failure cause
+              <select name="failureCause" required></select>
+            </label>
+            <div class="inline-fields">
+              <label>
+                Source
+                <input type="text" name="source" value="TTP">
+              </label>
+              <label>
+                Time spent
+                <input type="number" name="seconds" min="10" max="600" value="150">
+              </label>
+              <label>
+                State
+                <select name="trainingState" required></select>
+              </label>
+            </div>
+            <label>
+              Reference
+              <input type="text" name="reference" placeholder="Module, question ID, or link">
+            </label>
+            <label>
+              Fix rule
+              <textarea name="lesson" rows="4" placeholder="The rule I will apply next time"></textarea>
+            </label>
+            <button class="primary-button warm" type="submit">Add To Review</button>
+          </form>
+        </div>
+
+        <section class="content-band">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">Recent</p>
+              <h2>Logged sessions</h2>
+            </div>
+          </div>
+          <div class="session-list" id="session-list"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="mocks" aria-labelledby="mocks-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Calibration</p>
+            <h2 id="mocks-title">Mock schedule</h2>
+          </div>
+        </div>
+        <div class="mock-list" id="mock-list"></div>
+      </section>
+
+      <section class="tab-panel" id="settings" aria-labelledby="settings-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Private local data</p>
+            <h2 id="settings-title">Backup and standards</h2>
+          </div>
+          <button class="ghost-button danger" id="reset-data" type="button">Reset Local Data</button>
+        </div>
+
+        <section class="split-layout">
+          <article class="chart-card">
+            <h3>Backup</h3>
+            <p class="muted-copy">Data stays in this browser. Export a backup before switching devices or clearing browser data.</p>
+            <div class="button-row">
+              <button class="primary-button" id="export-data" type="button">Export Backup</button>
+              <label class="file-button">
+                Import Backup
+                <input id="backup-input" type="file" accept="application/json">
+              </label>
+            </div>
+            <label class="merge-choice">
+              Import mode
+              <select id="backup-mode">
+                <option value="merge">Merge with current data</option>
+                <option value="replace">Replace current data</option>
+              </select>
+            </label>
+            <p class="status-line" id="backup-status"></p>
+          </article>
+
+          <article class="chart-card">
+            <h3>Classification standard</h3>
+            <div class="taxonomy-grid" id="taxonomy-grid"></div>
+          </article>
+        </section>
+
+        <section class="content-band">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">Operating rules</p>
+              <h2>What the app assumes</h2>
+            </div>
+          </div>
+          <div class="assumption-grid">
+            <article>
+              <h3>Bridge safely</h3>
+              <p>Import visible result pages through screenshot or paste. No login automation or hidden scraping.</p>
+            </article>
+            <article>
+              <h3>Repair first</h3>
+              <p>On work nights, due mistake cards outrank new TTP volume.</p>
+            </article>
+            <article>
+              <h3>Verbal stays quiet</h3>
+              <p>Verbal remains maintenance unless mock data shows a real drop.</p>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
