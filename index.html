@@ -37,24 +37,28 @@
         <span class="tab-icon" aria-hidden="true">01</span>
         Today
       </button>
-      <button class="tab-button" data-tab="import" aria-pressed="false">
+      <button class="tab-button" data-tab="coach" aria-pressed="false">
         <span class="tab-icon" aria-hidden="true">02</span>
+        Coach
+      </button>
+      <button class="tab-button" data-tab="import" aria-pressed="false">
+        <span class="tab-icon" aria-hidden="true">03</span>
         Import
       </button>
       <button class="tab-button" data-tab="review" aria-pressed="false">
-        <span class="tab-icon" aria-hidden="true">03</span>
+        <span class="tab-icon" aria-hidden="true">04</span>
         Fix
       </button>
       <button class="tab-button" data-tab="log" aria-pressed="false">
-        <span class="tab-icon" aria-hidden="true">04</span>
+        <span class="tab-icon" aria-hidden="true">05</span>
         Log
       </button>
       <button class="tab-button" data-tab="mocks" aria-pressed="false">
-        <span class="tab-icon" aria-hidden="true">05</span>
+        <span class="tab-icon" aria-hidden="true">06</span>
         Schedule
       </button>
       <button class="tab-button" data-tab="settings" aria-pressed="false">
-        <span class="tab-icon" aria-hidden="true">06</span>
+        <span class="tab-icon" aria-hidden="true">07</span>
         Data
       </button>
     </nav>
@@ -80,6 +84,7 @@
             <ol class="action-list compact-list" id="today-actions"></ol>
             <div class="routine-strip" id="routine-strip"></div>
             <div class="quick-actions">
+              <button class="primary-button warm" type="button" data-start-block>Start Guided Block</button>
               <button class="primary-button" type="button" data-jump="import">Import Result</button>
               <button class="ghost-button" type="button" data-jump="review">Fix Mistakes</button>
             </div>
@@ -163,6 +168,116 @@
             </div>
             <div class="next-mock" id="next-mock"></div>
           </article>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="coach" aria-labelledby="coach-title">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">Guided block</p>
+            <h2 id="coach-title">Practice cockpit</h2>
+          </div>
+          <button class="primary-button warm" type="button" data-start-block>Load Today's Block</button>
+        </div>
+
+        <div class="coach-layout">
+          <article class="coach-card focus-card">
+            <div class="card-heading">
+              <span class="marker marker-coral"></span>
+              <h3>Now</h3>
+            </div>
+            <div id="coach-focus"></div>
+          </article>
+
+          <article class="coach-card timer-card">
+            <div class="card-heading">
+              <span class="marker marker-green"></span>
+              <h3>Timer</h3>
+            </div>
+            <div class="timer-face" id="block-timer">00:00</div>
+            <div class="button-row timer-buttons">
+              <button class="primary-button" type="button" data-block-action="start">Start</button>
+              <button class="ghost-button" type="button" data-block-action="pause">Pause</button>
+              <button class="ghost-button" type="button" data-block-action="reset">Reset</button>
+            </div>
+            <div class="pace-ladder" id="pace-ladder"></div>
+          </article>
+
+          <article class="coach-card protocol-card">
+            <div class="card-heading">
+              <span class="marker marker-amber"></span>
+              <h3>Exam protocol</h3>
+            </div>
+            <div id="exam-protocol"></div>
+          </article>
+        </div>
+
+        <section class="content-band coach-debrief">
+          <div class="section-title compact">
+            <div>
+              <p class="eyebrow">One-minute debrief</p>
+              <h2>Turn the set into repair</h2>
+            </div>
+            <span class="confidence-pill" id="debrief-status">Waiting</span>
+          </div>
+
+          <form class="data-form debrief-form" id="guided-debrief-form">
+            <div class="inline-fields">
+              <label>
+                Questions
+                <input type="number" name="questions" min="1" max="64" value="15" required>
+              </label>
+              <label>
+                Correct
+                <input type="number" name="correct" min="0" max="64" value="10" required>
+              </label>
+              <label>
+                Uncertain
+                <input type="number" name="uncertain" min="0" max="64" value="0">
+              </label>
+            </div>
+
+            <div class="choice-row" id="debrief-causes" aria-label="Primary failure cause"></div>
+
+            <div class="inline-fields">
+              <label>
+                Difficulty
+                <select name="difficulty">
+                  <option>Hard</option>
+                  <option>Mixed</option>
+                  <option>Medium</option>
+                  <option>Easy</option>
+                </select>
+              </label>
+              <label>
+                Result quality
+                <select name="quality">
+                  <option value="clean">Clean reps</option>
+                  <option value="rushed">Rushed</option>
+                  <option value="slow">Too slow</option>
+                  <option value="messy">Messy setup</option>
+                </select>
+              </label>
+              <label>
+                Minutes
+                <input type="number" name="minutes" min="1" max="180" value="30" required>
+              </label>
+            </div>
+
+            <label>
+              Fix rule
+              <select name="fixRulePreset">
+                <option>Use the 4-step chart read before any DI answer.</option>
+                <option>Name variables before manipulating equations.</option>
+                <option>Write constraints before testing cases.</option>
+                <option>Cap the first approach and spend edits only on high-uncertainty questions.</option>
+                <option>Redo the concept example before more timed volume.</option>
+                <option>Slow the first read and identify the exact ask.</option>
+              </select>
+            </label>
+
+            <button class="primary-button warm" type="submit">Save Debrief And Create Repairs</button>
+          </form>
         </section>
       </section>
 

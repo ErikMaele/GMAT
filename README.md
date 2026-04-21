@@ -1,8 +1,8 @@
-# GMAT Practice Optimizer V3
+# GMAT Practice Optimizer V4
 
-Local-first static website for Erik's TTP-first GMAT prep.
+Local-first static website for Erik's TTP-first GMAT prep. The product goal is simple: open the app, start the right block, stay inside official GMAT pacing constraints, then convert the debrief into repair cards with as little typing as possible.
 
-Open `index.html` in a browser. The app stores practice sessions, import batches, question attempts, and mistake cards in browser storage. Use **Data -> Export Backup** before moving devices or clearing browser data.
+Open `index.html` in a browser. The app stores practice sessions, guided blocks, import batches, question attempts, and mistake cards in browser storage. Use **Data -> Export Backup** before moving devices or clearing browser data.
 
 ## GitHub Pages
 
@@ -10,32 +10,33 @@ This folder is ready for GitHub Pages. Publish the repository from the root fold
 
 The live page uses Wikimedia image URLs for the Oxford hero and motivation images so the first page still renders even if the local `assets/` folder is not uploaded correctly.
 
-## V3 workflow
+## V4 Coach Workflow
 
 1. Open the Today tab.
-2. Clear the repair queue up to the daily cap.
-3. Do the adaptive TTP mix shown.
-4. Screenshot or copy the visible TTP result.
-5. Use Import to parse and confirm the batch.
-6. Fix due mistake cards before new work.
-7. Use the Schedule tab to see the current fluid plan, weekend emphasis, and mock checkpoints.
+2. Click **Start Guided Block**.
+3. Use the Coach tab while studying in TTP: it shows the exact module, question count, target accuracy, target seconds per question, and official-section protocol.
+4. Use the timer and pacing ladder to avoid hidden overinvestment.
+5. After the set, complete the one-minute debrief with dropdowns/chips instead of long typing.
+6. The app logs the block, creates wrong/uncertain repair cards, and sends you to Fix.
+7. Fix due cards before new volume, especially on Norvestor work nights.
 
-## Research-backed upgrades
+## Research-Backed Product Logic
 
-V3 implements ten patterns from high-performing learning products and learning science:
+V4 combines GMAT-specific constraints with patterns from TTP, GMAT Club, UWorld, Magoosh, Anki-style spaced repetition, and active recall research:
 
+- Practice cockpit: the app runs the study block instead of only logging it afterward.
+- Official pacing protocol: Quant 21 q / 45 min, Verbal 23 q / 45 min, DI 20 q / 45 min.
+- Section constraints: Quant and Verbal are no-calculator; DI allows the on-screen calculator.
+- Review/edit discipline: the cockpit reminds Erik to reserve edits for high-uncertainty questions and never leave blanks.
+- One-minute debrief: score, uncertainty, primary failure cause, and fix rule are captured immediately after the set.
+- Auto repair creation: wrong and uncertain questions become review cards automatically.
 - Active recall before scoring: repair cards hide the fix rule until Erik reveals it.
-- Confidence-based review: cards use Again / Hard / Good / Easy ratings instead of a binary pass/fail.
-- Spaced repetition with lapses: misses reset the card and keep it due.
-- Daily review caps: weeknights prevent the repair queue from swallowing all study time.
-- Leech detection: repeat offenders are flagged for concept rebuilding.
-- Adaptive interleaving: daily TTP sets mix the highest-risk topics instead of drilling only one lane.
-- Mastery thresholds: topics show Build, Calibrate, Repair, Unseen, or Mastery.
-- Score band: readiness turns into a conservative current-score range.
-- Streak and exam countdown: momentum is visible without turning the app into a toy.
-- One-click import prefill: Today's TTP assignment can populate the import form before the set.
+- Confidence-based review: Again / Hard / Good / Easy ratings replace binary pass/fail.
+- Adaptive interleaving: daily TTP sets mix the highest-risk topics.
+- Review debt priority: due repairs outrank new practice on work nights.
+- Backup portability: V4 exports/imports guided blocks as well as sessions and repair cards.
 
-## Current product logic
+## Current Product Logic
 
 - Baseline: 655 official attempt on 2025-12-31, split Q80 / V87 / DI81.
 - Target: 735-745 with Q89 / V87 / DI89.
@@ -45,17 +46,17 @@ V3 implements ten patterns from high-performing learning products and learning s
 - Weeknight mode after 2026-05-04 prioritizes due mistake repair before new volume.
 - Verbal stays maintenance-only unless mock data shows a real drop.
 
-## Bridge stance
+## Bridge Stance
 
 The import flow uses screenshots or pasted visible text. It does not automate login, scrape hidden account data, or use GitHub as a live study database.
 
 OCR loads Tesseract.js only when you click **Run OCR**. If it is unavailable, paste the visible result text into the fallback box.
 
-## Mistake repair
+## Mistake Repair
 
 The Fix tab shows one card at a time. First attempt the redo, then reveal the fix rule. **Again** keeps the card due, **Hard** repeats it tomorrow, **Good** advances the normal interval, and **Easy** skips ahead faster. Imported batches can be deleted from Import history, which also removes the generated review cards from that import.
 
-## Oxford theme assets
+## Oxford Theme Assets
 
 - `assets/radcliffe-square.jpg` - Radcliffe Square photo by Txllxt TxllxT, Wikimedia Commons, CC BY-SA 4.0.
 - `assets/christ-church-meadow.jpg` - Christ Church Meadow photo by Ozeye, Wikimedia Commons, CC BY-SA 3.0 / GFDL.

@@ -1,6 +1,6 @@
 const STORAGE_KEY_V2 = "erik-gmat-optimizer-v2";
 const STORAGE_KEY_V1 = "erik-gmat-optimizer-v1";
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const failureCauses = [
   { id: "concept_gap", label: "Concept gap", family: "Concept" },
@@ -155,6 +155,13 @@ const reviewRatings = {
   easy: { label: "Easy", intervalMove: 2, miss: false, state: "improving" }
 };
 
+const sectionBlueprint = {
+  Quant: { label: "Quantitative Reasoning", questions: 21, minutes: 45, avgSeconds: 129, calculator: "No calculator" },
+  Verbal: { label: "Verbal Reasoning", questions: 23, minutes: 45, avgSeconds: 117, calculator: "No calculator" },
+  DI: { label: "Data Insights", questions: 20, minutes: 45, avgSeconds: 135, calculator: "On-screen calculator" },
+  Unknown: { label: "Mixed practice", questions: 15, minutes: 30, avgSeconds: 120, calculator: "Source rules" }
+};
+
 const defaultState = {
   schemaVersion: SCHEMA_VERSION,
   profile: {
@@ -230,6 +237,8 @@ const defaultState = {
     }
   ],
   importBatches: [],
+  activeBlock: null,
+  guidedBlocks: [],
   mocks: [
     {
       id: "official-dec",
@@ -338,6 +347,7 @@ let selectedScreenshot = null;
 let lastParsedImport = null;
 let activeReviewId = null;
 let activeReviewRevealed = false;
+let blockTicker = null;
 
 function uid(prefix = "id") {
   const random = crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -452,6 +462,8 @@ function normalizeState(input) {
         ? input.errors.map(errorToCard)
         : base.mistakeCards,
     importBatches: Array.isArray(input.importBatches) ? input.importBatches : base.importBatches,
+    activeBlock: input.activeBlock || base.activeBlock,
+    guidedBlocks: Array.isArray(input.guidedBlocks) ? input.guidedBlocks : base.guidedBlocks,
     mocks: Array.isArray(input.mocks) ? input.mocks : base.mocks
   };
   return merged;
@@ -820,6 +832,90 @@ function exactAssignment() {
   };
 }
 
+function currentBlock() {
+  if (state.activeBlock) return state.activeBlock;
+  return createBlockFromAssignment(false);
+}
+
+function createBlockFromAssignment(save = true) {
+  const assignment = exactAssignment();
+  const topic = assignment.topic;
+  const blueprint = sectionBlueprint[topic.section] || sectionBlueprint.Unknown;
+  const block = {
+    id: uid("block"),
+    kind: "GuidedBlock",
+    date: todayISO(),
+    status: "ready",
+    createdAt: new Date().toISOString(),
+    startedAt: null,
+    elapsedSeconds: 0,
+    source: "TTP",
+    sourceLabel: `${assignment.module.module}: ${assignment.module.label}`,
+    section: topic.section,
+    topic: topic.id,
+    questions: assignment.count,
+    targetAccuracy: assignment.targetAccuracy,
+    targetSeconds: assignment.targetSeconds,
+    targetMinutes: Math.max(1, Math.round((assignment.count * assignment.targetSeconds) / 60)),
+    difficulty: assignment.difficulty,
+    setMode: assignment.setMode,
+    reviewBlock: assignment.reviewBlock,
+    reviewCap: assignment.reviewCap,
+    mix: assignment.mix,
+    blueprint
+  };
+  if (save) {
+    state.activeBlock = block;
+    saveState();
+  }
+  return block;
+}
+
+function blockElapsed(block = currentBlock()) {
+  if (!block) return 0;
+  if (block.status === "running" && block.startedAt) {
+    return Math.max(0, Math.round((Date.now() - Number(block.startedAt)) / 1000));
+  }
+  return Number(block.elapsedSeconds || 0);
+}
+
+function formatDuration(seconds) {
+  const value = Math.max(0, Number(seconds || 0));
+  const minutes = Math.floor(value / 60);
+  const remainder = value % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function paceCheckpoints(block = currentBlock()) {
+  const total = Number(block.questions || 1);
+  const targetSeconds = Number(block.targetSeconds || 120);
+  const raw = [0.25, 0.5, 0.75, 1].map((ratio) => ({
+    question: Math.max(1, Math.round(total * ratio)),
+    seconds: Math.round(total * ratio * targetSeconds)
+  }));
+  const seen = new Set();
+  return raw.filter((item) => {
+    const key = item.question;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function examProtocolFor(section) {
+  const blueprint = sectionBlueprint[section] || sectionBlueprint.Unknown;
+  const avg = blueprint.avgSeconds;
+  return {
+    blueprint,
+    rules: [
+      `${blueprint.questions} official questions in ${blueprint.minutes} minutes (${avg}s/q avg).`,
+      `${blueprint.calculator}; train under the same constraint when possible.`,
+      "Bookmark only high-uncertainty questions; the real exam allows three answer edits per section.",
+      "Never leave blanks: unfinished questions are penalized."
+    ]
+  };
+}
+
 function inferTimingFlag(seconds, topic, correct) {
   if (correct && seconds <= topic.targetSeconds + 10) return "clean_correct";
   if (correct) return "uncertain_correct";
@@ -958,6 +1054,20 @@ function setupQuickActions() {
 
 function setupGlobalActions() {
   document.addEventListener("click", (event) => {
+    const startBlock = event.target.closest("[data-start-block]");
+    if (startBlock) {
+      createBlockFromAssignment(true);
+      renderAll();
+      openTab("coach");
+      return;
+    }
+
+    const blockAction = event.target.closest("[data-block-action]");
+    if (blockAction) {
+      handleBlockAction(blockAction.dataset.blockAction);
+      return;
+    }
+
     const deleteImport = event.target.closest("[data-delete-import]");
     if (deleteImport) {
       deleteImportBatch(deleteImport.dataset.deleteImport);
@@ -982,6 +1092,41 @@ function setupGlobalActions() {
       deleteMistakeCard(deleteCard.dataset.deleteCard);
     }
   });
+}
+
+function handleBlockAction(action) {
+  const block = state.activeBlock || createBlockFromAssignment(true);
+  if (action === "start") {
+    const elapsed = blockElapsed(block);
+    block.startedAt = Date.now() - elapsed * 1000;
+    block.status = "running";
+  }
+  if (action === "pause") {
+    block.elapsedSeconds = blockElapsed(block);
+    block.startedAt = null;
+    block.status = "paused";
+  }
+  if (action === "reset") {
+    block.elapsedSeconds = 0;
+    block.startedAt = null;
+    block.status = "ready";
+  }
+  saveState();
+  renderCoach();
+  updateBlockTimer();
+}
+
+function updateBlockTimer() {
+  const timer = byId("block-timer");
+  if (!timer) return;
+  timer.textContent = formatDuration(blockElapsed(currentBlock()));
+}
+
+function setupBlockTicker() {
+  if (blockTicker) return;
+  blockTicker = setInterval(() => {
+    if (state.activeBlock && state.activeBlock.status === "running") updateBlockTimer();
+  }, 1000);
 }
 
 function renderDashboard() {
@@ -1109,6 +1254,75 @@ function renderLearningEngine(assignment) {
       <div><strong>${reviewDebtLabel()}</strong><span>review debt</span></div>
     </div>
   `;
+}
+
+function renderCoach() {
+  if (!byId("coach-focus")) return;
+  const block = currentBlock();
+  const topic = getTopic(block.topic);
+  const protocol = examProtocolFor(block.section);
+  const elapsed = blockElapsed(block);
+  const targetTotal = Math.max(1, Number(block.questions || 1) * Number(block.targetSeconds || 120));
+  const paceDelta = elapsed - targetTotal;
+  const paceText = elapsed === 0
+    ? "Ready"
+    : paceDelta <= -30
+      ? `${formatDuration(Math.abs(paceDelta))} ahead`
+      : paceDelta <= 30
+        ? "On pace"
+        : `${formatDuration(paceDelta)} behind`;
+
+  byId("coach-focus").innerHTML = `
+    <div class="coach-hero">
+      <span>${escapeHtml(block.source)}</span>
+      <strong>${escapeHtml(topic.ttpModule)}</strong>
+      <p>${escapeHtml(topic.assignment)}</p>
+    </div>
+    <dl class="coach-stats">
+      <div><dt>Set</dt><dd>${block.questions} questions</dd></div>
+      <div><dt>Target</dt><dd>${block.targetAccuracy}% / ${block.targetSeconds}s</dd></div>
+      <div><dt>Mode</dt><dd>${escapeHtml(block.setMode)}</dd></div>
+      <div><dt>Pace</dt><dd>${escapeHtml(paceText)}</dd></div>
+    </dl>
+    <div class="coach-warning">${escapeHtml(block.reviewBlock)}</div>
+  `;
+
+  byId("block-timer").textContent = formatDuration(elapsed);
+  byId("pace-ladder").innerHTML = paceCheckpoints(block).map((item) => {
+    const reached = elapsed >= item.seconds;
+    return `
+      <div class="${reached ? "reached" : ""}">
+        <span>Q${item.question}</span>
+        <strong>${formatDuration(item.seconds)}</strong>
+      </div>
+    `;
+  }).join("");
+
+  byId("exam-protocol").innerHTML = `
+    <div class="protocol-topline">
+      <strong>${escapeHtml(protocol.blueprint.label)}</strong>
+      <span>${protocol.blueprint.questions} q / ${protocol.blueprint.minutes} min</span>
+    </div>
+    <ul>${protocol.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>
+  `;
+
+  const form = byId("guided-debrief-form");
+  if (form) {
+    const targetCorrect = Math.round((Number(block.questions) * Number(block.targetAccuracy || 80)) / 100);
+    form.questions.value = block.questions;
+    form.minutes.value = Math.max(1, Math.round((elapsed || block.questions * block.targetSeconds) / 60));
+    form.correct.value = Math.min(Number(form.questions.value), Math.max(0, targetCorrect));
+    setSelectIfOption(form.difficulty, block.difficulty.includes("Hard") ? "Hard" : "Mixed");
+  }
+
+  byId("debrief-causes").innerHTML = failureCauses
+    .filter((cause) => cause.id !== "unknown")
+    .map((cause, index) => `
+      <label class="choice-chip">
+        <input type="radio" name="failureCause" value="${cause.id}" ${index === 0 ? "checked" : ""}>
+        <span>${escapeHtml(cause.label)}</span>
+      </label>
+    `).join("");
 }
 
 function latestBottleneck() {
@@ -1272,6 +1486,11 @@ function setupForms() {
     renderAll();
   });
 
+  byId("guided-debrief-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveGuidedDebrief(readForm(event.currentTarget));
+  });
+
   byId("seed-error").addEventListener("click", () => {
     state.mistakeCards.push({
       id: uid("card"),
@@ -1298,7 +1517,7 @@ function setupForms() {
   });
 
   byId("reset-data").addEventListener("click", () => {
-    if (!confirm("Reset local GMAT optimizer data to the seeded V2 plan?")) return;
+    if (!confirm("Reset local GMAT optimizer data to the seeded V4 coach plan?")) return;
     state = structuredClone(defaultState);
     saveState();
     populateForms();
@@ -1357,6 +1576,106 @@ function setupSmartDefaults() {
   };
   importForm.topic.addEventListener("change", syncImportFix);
   importForm.failureCause.addEventListener("change", syncImportFix);
+}
+
+function saveGuidedDebrief(data) {
+  const block = state.activeBlock || createBlockFromAssignment(true);
+  const topic = getTopic(block.topic);
+  const questions = Math.max(1, Number(data.questions || block.questions));
+  const correct = Math.min(questions, Math.max(0, Number(data.correct || 0)));
+  const wrong = Math.max(0, questions - correct);
+  const uncertain = Math.max(0, Number(data.uncertain || 0));
+  const minutes = Math.max(1, Number(data.minutes || Math.round(blockElapsed(block) / 60) || block.targetMinutes));
+  const avgSeconds = Math.round((minutes * 60) / questions);
+  const failureCause = data.failureCause || "unknown";
+  const lesson = data.fixRulePreset || defaultFixRule(topic.id, failureCause);
+  const blockId = block.id || uid("block");
+  const completedBlock = {
+    ...block,
+    id: blockId,
+    status: "completed",
+    completedAt: new Date().toISOString(),
+    elapsedSeconds: blockElapsed(block),
+    questions,
+    correct,
+    wrong,
+    uncertain,
+    minutes,
+    avgSeconds,
+    failureCause,
+    quality: data.quality || "clean"
+  };
+
+  state.guidedBlocks.push(completedBlock);
+  state.sessions.push({
+    id: uid("session"),
+    kind: "PracticeSession",
+    guidedBlockId: blockId,
+    date: block.date || todayISO(),
+    source: block.source || "TTP",
+    sourceLabel: block.sourceLabel || topic.name,
+    section: topic.section,
+    topic: topic.id,
+    questions,
+    correct,
+    wrong,
+    uncertain,
+    minutes,
+    avgSeconds,
+    difficulty: data.difficulty || block.difficulty,
+    setType: "Guided coach block",
+    notes: `Coach debrief: ${data.quality || "clean"}`
+  });
+
+  const reviewCount = Math.min(40, wrong + uncertain);
+  for (let index = 0; index < reviewCount; index += 1) {
+    const incorrect = index < wrong;
+    const timingFlag = inferTimingFlag(avgSeconds, topic, !incorrect);
+    state.questionAttempts.push({
+      id: uid("attempt"),
+      kind: "QuestionAttempt",
+      guidedBlockId: blockId,
+      date: block.date || todayISO(),
+      source: block.source || "TTP",
+      sourceLabel: block.sourceLabel || topic.name,
+      topic: topic.id,
+      section: topic.section,
+      correct: !incorrect,
+      uncertain: !incorrect,
+      seconds: avgSeconds,
+      timingFlag,
+      failureCause,
+      confidence: 0.88
+    });
+    state.mistakeCards.push({
+      id: uid("card"),
+      kind: "MistakeCard",
+      guidedBlockId: blockId,
+      date: block.date || todayISO(),
+      source: block.source || "TTP",
+      sourceLabel: block.sourceLabel || topic.name,
+      section: topic.section,
+      topic: topic.id,
+      failureCause,
+      trainingState: "due",
+      timingFlag,
+      confidence: 0.88,
+      seconds: avgSeconds,
+      reference: `${block.sourceLabel || topic.name} coach card #${index + 1}`,
+      lesson,
+      nextReview: addDays(block.date || todayISO(), 1),
+      intervalIndex: 0,
+      attempts: 0,
+      misses: 0,
+      ease: 2.5
+    });
+  }
+
+  state.activeBlock = null;
+  saveState();
+  setStatus("debrief-status", `Saved: ${correct}/${questions}, ${reviewCount} repair card${reviewCount === 1 ? "" : "s"}.`);
+  renderAll();
+  if (reviewCount) openTab("review");
 }
 
 function setupImport() {
@@ -1647,7 +1966,7 @@ function setupBackup() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `gmat-optimizer-v2-${todayISO()}.json`;
+    link.download = `gmat-optimizer-v4-${todayISO()}.json`;
     link.click();
     URL.revokeObjectURL(url);
   });
@@ -1687,6 +2006,8 @@ function mergeImportedState(current, incoming) {
     questionAttempts: mergeById(current.questionAttempts, incoming.questionAttempts),
     mistakeCards: mergeById(current.mistakeCards, incoming.mistakeCards),
     importBatches: mergeById(current.importBatches, incoming.importBatches),
+    guidedBlocks: mergeById(current.guidedBlocks || [], incoming.guidedBlocks || []),
+    activeBlock: current.activeBlock || incoming.activeBlock || null,
     mocks: mergeById(current.mocks, incoming.mocks)
   });
 }
@@ -1975,6 +2296,7 @@ function renderTaxonomy() {
 
 function renderAll() {
   renderDashboard();
+  renderCoach();
   renderSessions();
   renderImports();
   renderReview();
@@ -1989,5 +2311,6 @@ populateForms();
 setupForms();
 setupImport();
 setupBackup();
+setupBlockTicker();
 fillImportForm(parseImportText(""));
 renderAll();

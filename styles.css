@@ -623,6 +623,186 @@ main {
   text-transform: uppercase;
 }
 
+.coach-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.7fr) minmax(18rem, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.coach-card {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.coach-hero {
+  display: grid;
+  gap: 0.3rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--oxford), #173e67);
+  color: var(--white);
+}
+
+.coach-hero span {
+  color: var(--oxford-soft);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.coach-hero strong {
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  line-height: 0.95;
+}
+
+.coach-hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 800;
+}
+
+.coach-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.coach-stats div,
+.pace-ladder div {
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--white);
+}
+
+.coach-stats dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.coach-stats dd {
+  margin: 0.2rem 0 0;
+  font-weight: 900;
+}
+
+.coach-warning {
+  padding: 0.8rem;
+  border: 1px solid rgba(153, 70, 54, 0.28);
+  border-radius: 7px;
+  background: var(--coral-soft);
+  color: var(--coral);
+  font-weight: 900;
+}
+
+.timer-card {
+  justify-items: stretch;
+}
+
+.timer-face {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(3.2rem, 8vw, 5.8rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.timer-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pace-ladder {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pace-ladder div {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.pace-ladder div.reached {
+  border-color: rgba(0, 33, 71, 0.35);
+  background: var(--oxford-soft);
+  color: var(--oxford);
+}
+
+.protocol-topline {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--white);
+}
+
+.protocol-topline span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.protocol-card ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.coach-debrief {
+  margin-top: 1rem;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice-chip input {
+  position: absolute;
+  opacity: 0;
+}
+
+.choice-chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.choice-chip input:checked + span {
+  border-color: var(--oxford);
+  background: var(--oxford-soft);
+  color: var(--oxford);
+}
+
 .subtle,
 .muted-copy,
 .status-line {
@@ -1449,6 +1629,7 @@ main {
 @media (max-width: 1050px) {
   .dashboard-grid,
   .learning-grid,
+  .coach-layout,
   .form-grid,
   .import-layout,
   .dream-panel,
@@ -1525,8 +1706,13 @@ main {
   }
 
   .loop-item,
+  .coach-stats,
   .review-actions.reveal-actions,
   .queue-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .timer-buttons {
     grid-template-columns: 1fr;
   }
 
