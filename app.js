@@ -1,6 +1,6 @@
 const STORAGE_KEY_V2 = "erik-gmat-optimizer-v2";
 const STORAGE_KEY_V1 = "erik-gmat-optimizer-v1";
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const failureCauses = [
   { id: "concept_gap", label: "Concept gap", family: "Concept" },
@@ -148,6 +148,12 @@ const ttpModules = topics
 
 const sectionOptions = ["Quant", "DI", "Verbal", "Unknown"];
 const reviewIntervals = [1, 3, 7, 14, 30];
+const reviewRatings = {
+  again: { label: "Again", intervalMove: -99, miss: true, state: "failed_redo" },
+  hard: { label: "Hard", intervalMove: 0, miss: false, state: "improving" },
+  good: { label: "Good", intervalMove: 1, miss: false, state: "improving" },
+  easy: { label: "Easy", intervalMove: 2, miss: false, state: "improving" }
+};
 
 const defaultState = {
   schemaVersion: SCHEMA_VERSION,
@@ -330,6 +336,8 @@ const defaultState = {
 let state = loadState();
 let selectedScreenshot = null;
 let lastParsedImport = null;
+let activeReviewId = null;
+let activeReviewRevealed = false;
 
 function uid(prefix = "id") {
   const random = crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -422,7 +430,10 @@ function errorToCard(error) {
     nextReview: error.nextReview || todayISO(),
     intervalIndex: Number(error.intervalIndex || 0),
     attempts: Number(error.attempts || 0),
-    misses: Number(error.misses || 0)
+    misses: Number(error.misses || 0),
+    lastRating: error.lastRating || "",
+    reviewedAt: error.reviewedAt || "",
+    ease: Number(error.ease || 2.5)
   };
 }
 
@@ -610,11 +621,110 @@ function topicRisk(topic) {
   return Math.round(baselineGap + priorityBoost + accuracyGap + timeGap + dueGap + reviewGap + recencyPenalty(topic.id));
 }
 
+function riskSeverity(risk) {
+  if (risk >= 92) return "critical";
+  if (risk >= 72) return "high";
+  if (risk >= 48) return "medium";
+  return "low";
+}
+
+function riskLabel(risk) {
+  const severity = riskSeverity(risk);
+  return severity.charAt(0).toUpperCase() + severity.slice(1);
+}
+
 function rankedTopics() {
   return topics
     .filter((topic) => topic.id !== "verbal-maintenance" || verbalNeedsWork())
     .map((topic) => ({ ...topic, risk: topicRisk(topic) }))
     .sort((a, b) => b.risk - a.risk);
+}
+
+function adaptiveMix(totalCount = exactAssignment().count) {
+  const ranked = rankedTopics().filter((topic) => topic.id !== "unknown" && topic.id !== "verbal-maintenance").slice(0, 3);
+  const weights = [0.5, 0.3, 0.2];
+  let remaining = Number(totalCount || 0);
+  return ranked.map((topic, index) => {
+    const count = index === ranked.length - 1 ? remaining : Math.max(2, Math.round(totalCount * weights[index]));
+    remaining = Math.max(0, remaining - count);
+    return {
+      topic,
+      count,
+      mode: topic.section === "DI" ? "chart/process reps" : "quant reps",
+      target: `${topic.targetAccuracy}% / ${topic.targetSeconds}s`
+    };
+  });
+}
+
+function topicMastery(topicId) {
+  const topic = getTopic(topicId);
+  const accuracy = topicAccuracy(topicId);
+  const seconds = averageSeconds(topicId);
+  const due = topicDueCount(topicId);
+  const failures = reviewFailureRate(topicId);
+  if (due > 0 || failures > 0.25) return { label: "Repair", className: "repair" };
+  if (accuracy == null) return { label: "Unseen", className: "unseen" };
+  if (accuracy >= topic.targetAccuracy && seconds && seconds <= topic.targetSeconds + 10) return { label: "Mastery", className: "mastery" };
+  if (accuracy >= topic.targetAccuracy - 6) return { label: "Calibrate", className: "calibrate" };
+  return { label: "Build", className: "build" };
+}
+
+function leechCards() {
+  return state.mistakeCards.filter((card) => card.trainingState !== "mastered" && Number(card.misses || 0) >= 2);
+}
+
+function activityDates() {
+  const dates = new Set();
+  state.sessions.forEach((session) => {
+    if (session.date) dates.add(session.date);
+  });
+  state.importBatches.forEach((batch) => {
+    if (batch.date) dates.add(batch.date);
+    if (batch.savedAt) dates.add(batch.savedAt);
+  });
+  state.mistakeCards.forEach((card) => {
+    if (card.reviewedAt) dates.add(card.reviewedAt);
+  });
+  return [...dates].sort();
+}
+
+function studyStreak() {
+  const dates = new Set(activityDates());
+  let streak = 0;
+  let cursor = todayISO();
+  while (dates.has(cursor)) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
+function estimatedScoreBand() {
+  const quant = sectionReadiness("Quant");
+  const di = sectionReadiness("DI");
+  const verbal = verbalNeedsWork() ? sectionReadiness("Verbal") : 95;
+  const readiness = Math.round(quant * 0.42 + di * 0.38 + verbal * 0.2);
+  const baseline = Number(state.profile.baselineTotal || 655);
+  const target = Number(state.profile.targetTotal || 745);
+  const center = Math.round(baseline + (target - baseline) * Math.min(1, readiness / 100));
+  const mockScores = state.mocks
+    .map((mock) => Number(String(mock.score || "").match(/\d+/)?.[0] || 0))
+    .filter((score) => score >= 400 && score <= 805);
+  const latestMock = mockScores.at(-1);
+  const anchored = latestMock ? Math.round(center * 0.55 + latestMock * 0.45) : center;
+  return {
+    low: Math.max(605, anchored - 15),
+    high: Math.min(target, anchored + 15),
+    readiness
+  };
+}
+
+function reviewCap() {
+  const mode = getDayMode();
+  if (mode === "Norvestor evening") return 12;
+  if (mode === "Weekend deep work") return 28;
+  if (mode === "Full-time sprint") return 32;
+  return 8;
 }
 
 function verbalNeedsWork() {
@@ -682,6 +792,8 @@ function exactAssignment() {
   const module = ttpModules.find((item) => item.normalizedTopic === primary.id) || ttpModules[0];
   const count = workNight ? (due.length > 5 ? 10 : 15) : weekend ? 30 : sprint ? 35 : 12;
   const minutes = workNight ? 55 : weekend ? 135 : sprint ? 150 : 35;
+  const cap = reviewCap();
+  const mix = adaptiveMix(count);
   const modeText = reviewFirst ? "Redo due cards, then a small timed set" : primary.section === "Quant" ? "Timed after concept warm-up" : "Timed with reading routine";
 
   return {
@@ -695,7 +807,11 @@ function exactAssignment() {
     setMode: modeText,
     targetAccuracy: primary.targetAccuracy,
     targetSeconds: primary.targetSeconds,
-    reviewBlock: due.length ? `${due.length} due card${due.length === 1 ? "" : "s"} before new work` : "10-minute clean redo sweep",
+    reviewCap: cap,
+    mix,
+    reviewBlock: due.length
+      ? `${Math.min(due.length, cap)} of ${due.length} due cards before new work`
+      : "10-minute clean redo sweep",
     actions: [
       ["Open TTP", `${module.module}: ${module.label}.`],
       ["Do the set", `${count} questions, ${minutes} minutes max, ${modeText.toLowerCase()}.`],
@@ -840,9 +956,38 @@ function setupQuickActions() {
   });
 }
 
+function setupGlobalActions() {
+  document.addEventListener("click", (event) => {
+    const deleteImport = event.target.closest("[data-delete-import]");
+    if (deleteImport) {
+      deleteImportBatch(deleteImport.dataset.deleteImport);
+      return;
+    }
+
+    const nav = event.target.closest("[data-review-nav]");
+    if (nav) {
+      moveReview(Number(nav.dataset.reviewNav));
+      return;
+    }
+
+    const reveal = event.target.closest("[data-review-reveal]");
+    if (reveal) {
+      activeReviewRevealed = true;
+      renderReview();
+      return;
+    }
+
+    const deleteCard = event.target.closest("[data-delete-card]");
+    if (deleteCard) {
+      deleteMistakeCard(deleteCard.dataset.deleteCard);
+    }
+  });
+}
+
 function renderDashboard() {
   const today = todayISO();
   const assignment = exactAssignment();
+  const band = estimatedScoreBand();
   byId("today-date").textContent = formatDate(today);
   byId("today-mode").textContent = assignment.mode;
   byId("assignment-hero").innerHTML = `
@@ -881,12 +1026,23 @@ function renderDashboard() {
       note: `${dueCards().length} due / ${state.mistakeCards.length} active cards`
     },
     {
+      label: "Score band",
+      value: `${band.low}-${band.high}`,
+      note: `${band.readiness}% readiness weighted`
+    },
+    {
+      label: "Study streak",
+      value: `${studyStreak()}d`,
+      note: `${activityDates().length} active dates logged`
+    },
+    {
       label: "Pacing risk",
       value: pacingRisk(),
       note: latestBottleneck()
     }
   ];
   byId("metric-grid").innerHTML = metrics.map(renderMetric).join("");
+  renderLearningEngine(assignment);
   renderTopicTable();
   renderReadiness();
   renderNextMock();
@@ -899,6 +1055,59 @@ function renderMetric(metric) {
       <strong class="metric-value">${escapeHtml(metric.value)}</strong>
       <span class="metric-note">${escapeHtml(metric.note)}</span>
     </article>
+  `;
+}
+
+function renderLearningEngine(assignment) {
+  const due = dueCards();
+  const leeches = leechCards();
+  const mix = assignment.mix.length ? assignment.mix : adaptiveMix(assignment.count);
+  const nextSteps = [
+    {
+      label: "Repair",
+      value: due.length ? `${Math.min(due.length, assignment.reviewCap)} due cards` : "No overdue cards",
+      state: due.length ? "hot" : "calm"
+    },
+    {
+      label: "Warm-up",
+      value: `${assignment.topic.ttpModule}: ${assignment.topic.assignment}`,
+      state: "active"
+    },
+    {
+      label: "Interleave",
+      value: mix.map((item) => `${item.count} ${item.topic.name}`).join(" / "),
+      state: "active"
+    },
+    {
+      label: "Close loop",
+      value: "Import result, then repair every wrong or uncertain item",
+      state: "calm"
+    }
+  ];
+  byId("next-step-list").innerHTML = nextSteps.map((step) => `
+    <div class="loop-item ${step.state}">
+      <span>${escapeHtml(step.label)}</span>
+      <strong>${escapeHtml(step.value)}</strong>
+    </div>
+  `).join("");
+
+  byId("adaptive-mix").innerHTML = mix.map((item) => `
+    <div class="mix-item">
+      <strong>${escapeHtml(item.topic.name)}</strong>
+      <span>${item.count} questions / ${escapeHtml(item.mode)} / ${escapeHtml(item.target)}</span>
+      <div class="risk-bar risk-${riskSeverity(item.topic.risk)}"><span style="width:${Math.min(100, item.topic.risk)}%"></span></div>
+    </div>
+  `).join("");
+
+  const band = estimatedScoreBand();
+  byId("momentum-card").innerHTML = `
+    <div class="momentum-number">${studyStreak()}<span>day streak</span></div>
+    <div class="momentum-lines">
+      <div><strong>${band.low}-${band.high}</strong><span>current score band</span></div>
+      <div><strong>${Math.max(0, dateDiff(todayISO(), state.profile.targetExamDate))}</strong><span>days to target exam</span></div>
+      <div><strong>${leeches.length}</strong><span>repeat offenders</span></div>
+      <div><strong>${reviewDebtLabel()}</strong><span>review debt</span></div>
+    </div>
   `;
 }
 
@@ -920,6 +1129,8 @@ function renderTopicTable() {
       const seconds = averageSeconds(topic.id);
       const due = topicDueCount(topic.id);
       const capped = Math.min(100, Math.round(topic.risk));
+      const severity = riskSeverity(topic.risk);
+      const mastery = topicMastery(topic.id);
       const accLabel = accuracy == null ? "No local reps" : `${accuracy}% recent`;
       const secLabel = seconds == null ? "No pace data" : `${seconds}s/q`;
       return `
@@ -928,13 +1139,14 @@ function renderTopicTable() {
             <div class="topic-name">${escapeHtml(topic.name)}</div>
             <div class="topic-meta">${escapeHtml(topic.ttpModule)} / P${topic.priority} / ESR ${topic.baseline}th pct</div>
           </div>
+          <div class="mastery-pill ${mastery.className}">${escapeHtml(mastery.label)}</div>
           <div class="topic-score">${accLabel}</div>
           <div class="topic-score">${secLabel}</div>
           <div class="topic-score">${due} due</div>
-          <div class="risk-bar" aria-label="Priority ${capped}">
+          <div class="risk-bar risk-${severity}" aria-label="${riskLabel(topic.risk)} priority ${capped}">
             <span style="width: ${capped}%"></span>
           </div>
-          <div class="topic-action">${escapeHtml(topic.assignment)}</div>
+          <div class="topic-action"><strong>${riskLabel(topic.risk)}</strong> / ${escapeHtml(topic.assignment)}</div>
         </div>
       `;
     })
@@ -1038,8 +1250,8 @@ function setupForms() {
       id: uid("card"),
       kind: "MistakeCard",
       date: data.date,
-      source: data.source.trim() || "Custom",
-      sourceLabel: data.reference.trim() || topic.name,
+      source: data.source || "Custom",
+      sourceLabel: data.reference || topic.name,
       section: data.section,
       topic: data.topic,
       failureCause: data.failureCause,
@@ -1047,8 +1259,8 @@ function setupForms() {
       timingFlag: inferTimingFlag(Number(data.seconds), topic, false),
       confidence: 0.92,
       seconds: Number(data.seconds),
-      reference: data.reference.trim(),
-      lesson: data.lesson.trim(),
+      reference: data.reference || "",
+      lesson: (data.lesson.trim() || data.lessonPreset || "").trim(),
       nextReview: addDays(data.date, 1),
       intervalIndex: 0,
       attempts: 0,
@@ -1092,6 +1304,59 @@ function setupForms() {
     populateForms();
     renderAll();
   });
+
+  setupSmartDefaults();
+}
+
+function referencePresetFor(topicId) {
+  return {
+    "alg-word": "TTP Algebra module",
+    "value-order-factors": "TTP Number Properties module",
+    "rates-ratios-percent": "TTP Rates / Ratios / Percent module",
+    "graphs-tables": "TTP Graphs and Tables set",
+    "multi-source": "TTP Multi-Source Reasoning set",
+    "two-part": "TTP Two-Part Analysis set",
+    "data-sufficiency": "TTP Data Sufficiency set"
+  }[topicId] || "Official mock review";
+}
+
+function lessonPresetFor(topicId, failureCause) {
+  if (topicId === "graphs-tables" || failureCause === "data_reading") return "Check units, axes, trend, and outliers before answering.";
+  if (failureCause === "translation_setup") return "Name variables before manipulating equations.";
+  if (failureCause === "execution_algebra") return "Write constraints before substituting numbers.";
+  if (failureCause === "overinvestment") return "Cap the first approach; guess cleanly if no path appears.";
+  if (failureCause === "rushed_read") return "Slow down: this was a rushed read, not a hard question.";
+  if (failureCause === "concept_gap") return "Redo the concept example before the next timed set.";
+  return "Read the exact question stem before looking at answers.";
+}
+
+function setSelectIfOption(select, value) {
+  if (!select || !value) return;
+  const option = [...select.options].find((item) => item.value === value || item.textContent === value);
+  if (option) select.value = option.value;
+}
+
+function setupSmartDefaults() {
+  const errorForm = byId("error-form");
+  const importForm = byId("import-review-form");
+  if (!errorForm || !importForm) return;
+
+  const syncErrorDefaults = () => {
+    const topic = getTopic(errorForm.topic.value);
+    errorForm.section.value = topic.section;
+    setSelectIfOption(errorForm.reference, referencePresetFor(topic.id));
+    setSelectIfOption(errorForm.lessonPreset, lessonPresetFor(topic.id, errorForm.failureCause.value));
+  };
+
+  errorForm.topic.addEventListener("change", syncErrorDefaults);
+  errorForm.failureCause.addEventListener("change", syncErrorDefaults);
+  syncErrorDefaults();
+
+  const syncImportFix = () => {
+    importForm.fixRule.value = defaultFixRule(importForm.topic.value, importForm.failureCause.value);
+  };
+  importForm.topic.addEventListener("change", syncImportFix);
+  importForm.failureCause.addEventListener("change", syncImportFix);
 }
 
 function setupImport() {
@@ -1150,6 +1415,7 @@ function setupImport() {
   });
 
   byId("parse-import").addEventListener("click", () => parseAndRenderImport(byId("import-text").value));
+  byId("prefill-today").addEventListener("click", () => prefillTodayImport());
   byId("clear-import").addEventListener("click", () => {
     selectedScreenshot = null;
     preview.removeAttribute("src");
@@ -1184,6 +1450,32 @@ function ensureOcrEngine() {
 function parseAndRenderImport(text) {
   lastParsedImport = parseImportText(text);
   fillImportForm(lastParsedImport);
+}
+
+function prefillTodayImport() {
+  const assignment = exactAssignment();
+  const minutes = Math.max(1, Math.round((assignment.count * assignment.targetSeconds) / 60));
+  const parsed = {
+    date: todayISO(),
+    source: "TTP",
+    sourceLabel: `${assignment.module.module}: ${assignment.module.label}`,
+    topic: assignment.topic.id,
+    setType: "Custom test",
+    difficulty: assignment.difficulty.includes("Hard") ? "Hard" : "Mixed",
+    questions: assignment.count,
+    correct: Math.round(assignment.count * assignment.targetAccuracy / 100),
+    wrong: Math.max(0, assignment.count - Math.round(assignment.count * assignment.targetAccuracy / 100)),
+    uncertain: 0,
+    minutes,
+    avgSeconds: assignment.targetSeconds,
+    failureCause: assignment.topic.section === "DI" ? "data_reading" : "concept_gap",
+    confidence: 0.88,
+    rawText: "Prefilled from today's assignment"
+  };
+  lastParsedImport = parsed;
+  fillImportForm(parsed);
+  byId("import-text").value = `${parsed.sourceLabel}\n${parsed.difficulty}\n${parsed.questions} questions\n${parsed.correct}/${parsed.questions}\n${parsed.minutes} minutes`;
+  setStatus("ocr-status", "Today's assignment is prefilled. Adjust correct/wrong after the set.");
 }
 
 function fillImportForm(parsed) {
@@ -1285,7 +1577,7 @@ function saveImportBatch(data) {
       sourceLabel: batch.sourceLabel,
       topic: batch.topic,
       section: batch.section,
-      correct: false,
+      correct: !incorrect,
       uncertain: !incorrect,
       seconds,
       timingFlag,
@@ -1324,6 +1616,29 @@ function saveImportBatch(data) {
 
 function setStatus(id, message) {
   byId(id).textContent = message;
+}
+
+function deleteImportBatch(id) {
+  const batch = state.importBatches.find((item) => item.id === id);
+  if (!batch) return;
+  if (!confirm(`Delete import "${batch.sourceLabel}" and its generated review cards?`)) return;
+  state.importBatches = state.importBatches.filter((item) => item.id !== id);
+  state.sessions = state.sessions.filter((item) => item.importBatchId !== id);
+  state.questionAttempts = state.questionAttempts.filter((item) => item.importBatchId !== id);
+  state.mistakeCards = state.mistakeCards.filter((item) => item.importBatchId !== id);
+  if (state.mistakeCards.every((item) => item.id !== activeReviewId)) activeReviewId = null;
+  saveState();
+  renderAll();
+}
+
+function deleteMistakeCard(id) {
+  const card = state.mistakeCards.find((item) => item.id === id);
+  if (!card) return;
+  if (!confirm(`Delete this ${topicName(card.topic)} review card?`)) return;
+  state.mistakeCards = state.mistakeCards.filter((item) => item.id !== id);
+  if (activeReviewId === id) activeReviewId = null;
+  saveState();
+  renderAll();
 }
 
 function setupBackup() {
@@ -1376,54 +1691,144 @@ function mergeImportedState(current, incoming) {
   });
 }
 
-function updateReview(id, hit) {
+function updateReview(id, ratingId) {
   const card = state.mistakeCards.find((item) => item.id === id);
   if (!card) return;
+  const rating = reviewRatings[ratingId] || reviewRatings.good;
   card.attempts += 1;
-  if (!hit) {
+  card.reviewedAt = todayISO();
+  card.lastRating = ratingId;
+  if (rating.miss) {
     card.misses += 1;
     card.intervalIndex = 0;
     card.trainingState = "failed_redo";
+    card.ease = Math.max(1.3, Number(card.ease || 2.5) - 0.2);
+    card.nextReview = todayISO();
+  } else if (ratingId === "hard") {
+    card.intervalIndex = Math.max(0, card.intervalIndex);
+    card.trainingState = rating.state;
+    card.ease = Math.max(1.3, Number(card.ease || 2.5) - 0.08);
+    card.nextReview = addDays(todayISO(), reviewIntervals[card.intervalIndex]);
   } else {
-    card.intervalIndex = Math.min(card.intervalIndex + 1, reviewIntervals.length - 1);
+    card.intervalIndex = Math.min(card.intervalIndex + rating.intervalMove, reviewIntervals.length - 1);
     card.trainingState = card.intervalIndex >= reviewIntervals.length - 1 ? "mastered" : "improving";
+    card.ease = Math.min(3.2, Number(card.ease || 2.5) + (ratingId === "easy" ? 0.12 : 0.03));
+    card.nextReview = addDays(todayISO(), reviewIntervals[card.intervalIndex]);
   }
-  card.nextReview = addDays(todayISO(), reviewIntervals[card.intervalIndex]);
+  activeReviewId = null;
+  activeReviewRevealed = false;
   saveState();
   renderAll();
 }
 
 function renderReview() {
-  const items = [...state.mistakeCards].sort((a, b) => a.nextReview.localeCompare(b.nextReview));
+  const items = orderedReviewCards();
   if (!items.length) {
     byId("review-grid").innerHTML = `<div class="empty-state">No review items yet.</div>`;
     return;
   }
-  byId("review-grid").innerHTML = items.map((item) => {
-    const dueClass = item.nextReview < todayISO() ? "overdue" : item.nextReview === todayISO() ? "today" : "";
-    const dueText = item.trainingState === "mastered" ? "Mastered" : item.nextReview <= todayISO() ? "Due now" : `Due ${formatDate(item.nextReview)}`;
-    return `
-      <article class="review-card ${dueClass}">
-        <div>
-          <div class="review-meta">${escapeHtml(item.section)} / ${escapeHtml(causeFamily(item.failureCause))} / ${escapeHtml(stateLabel(item.trainingState))}</div>
-          <h3>${escapeHtml(topicName(item.topic))}</h3>
-          <p>${escapeHtml(item.lesson || defaultFixRule(item.topic, item.failureCause) || "No fix rule recorded.")}</p>
+  let activeIndex = Math.max(0, items.findIndex((item) => item.id === activeReviewId));
+  if (!activeReviewId || activeIndex < 0) {
+    activeIndex = Math.max(0, items.findIndex((item) => item.trainingState !== "mastered" && item.nextReview <= todayISO()));
+    activeReviewId = items[activeIndex].id;
+  }
+  const item = items[activeIndex];
+  const dueText = item.trainingState === "mastered" ? "Mastered" : item.nextReview <= todayISO() ? "Due now" : `Due ${formatDate(item.nextReview)}`;
+  const behind = items.filter((candidate) => candidate.id !== item.id).slice(0, 5);
+  const leech = Number(item.misses || 0) >= 2;
+  const ratingButtons = Object.entries(reviewRatings).map(([id, rating]) => `
+    <button class="mini-button rating-${id}" type="button" data-review="${item.id}" data-rating="${id}">${rating.label}</button>
+  `).join("");
+  byId("review-grid").innerHTML = `
+    <div class="flashcard-layout">
+      <section class="flashcard-stage">
+        <div class="stack-shadow one"></div>
+        <div class="stack-shadow two"></div>
+        <article class="review-card flashcard ${item.nextReview <= todayISO() ? "today" : ""}">
+          <div class="flashcard-topline">
+            <span>${activeIndex + 1} / ${items.length}</span>
+            <span>${escapeHtml(dueText)}${leech ? " / Rebuild" : ""}</span>
+          </div>
+          <div>
+            <div class="review-meta">${escapeHtml(item.section)} / ${escapeHtml(causeFamily(item.failureCause))} / ${escapeHtml(stateLabel(item.trainingState))}</div>
+            <h3>${escapeHtml(topicName(item.topic))}</h3>
+            ${activeReviewRevealed
+              ? `<p>${escapeHtml(item.lesson || defaultFixRule(item.topic, item.failureCause) || "No fix rule recorded.")}</p>`
+              : `<p class="recall-prompt">Attempt the redo first. Reveal the fix only after you have committed to an answer path.</p>`}
+          </div>
+          ${activeReviewRevealed ? `
+            <dl class="flashcard-facts">
+              <div><dt>Cause</dt><dd>${escapeHtml(causeLabel(item.failureCause))}</dd></div>
+              <div><dt>Timing</dt><dd>${escapeHtml(item.timingFlag || "unknown")}</dd></div>
+              <div><dt>Source</dt><dd>${escapeHtml(item.reference || item.sourceLabel)}</dd></div>
+              <div><dt>Confidence</dt><dd>${Math.round((item.confidence || 0) * 100)}%</dd></div>
+            </dl>
+            <div class="review-actions rating-actions">
+              ${ratingButtons}
+              <button class="mini-button danger" type="button" data-delete-card="${item.id}">Delete</button>
+            </div>
+          ` : `
+            <dl class="flashcard-facts single">
+              <div><dt>Source</dt><dd>${escapeHtml(item.reference || item.sourceLabel)}</dd></div>
+              <div><dt>Target</dt><dd>${escapeHtml(getTopic(item.topic).ttpModule)}</dd></div>
+            </dl>
+            <div class="review-actions reveal-actions">
+              <button class="mini-button" type="button" data-review-nav="-1">Previous</button>
+              <button class="mini-button reveal" type="button" data-review-reveal="${item.id}">Show Fix</button>
+              <button class="mini-button" type="button" data-review-nav="1">Next</button>
+              <button class="mini-button danger" type="button" data-delete-card="${item.id}">Delete</button>
+            </div>
+          `}
+        </article>
+      </section>
+      <aside class="review-side">
+        <h3>Up next</h3>
+        <div class="queue-summary">
+          <span>${dueCards().length} due</span>
+          <span>${leechCards().length} rebuild</span>
+          <span>${reviewCap()} cap</span>
         </div>
-        <div class="review-meta">
-          ${escapeHtml(dueText)} / ${escapeHtml(item.source)} / ${escapeHtml(item.reference || item.sourceLabel)}
-          <br>${escapeHtml(causeLabel(item.failureCause))} / ${escapeHtml(item.timingFlag || "unknown")} / ${Math.round((item.confidence || 0) * 100)}%
-        </div>
-        <div class="review-actions">
-          <button class="mini-button hit" type="button" data-review="${item.id}" data-hit="true">Got It</button>
-          <button class="mini-button miss" type="button" data-review="${item.id}" data-hit="false">Missed</button>
-        </div>
-      </article>
-    `;
-  }).join("");
+        ${behind.length ? behind.map((card) => `
+          <button class="queue-card" type="button" data-review-select="${card.id}">
+            <strong>${escapeHtml(topicName(card.topic))}</strong>
+            <span>${escapeHtml(causeLabel(card.failureCause))} / ${card.nextReview <= todayISO() ? "Due" : formatDate(card.nextReview)}${Number(card.misses || 0) >= 2 ? " / Rebuild" : ""}</span>
+          </button>
+        `).join("") : `<p class="muted-copy">No more cards in the queue.</p>`}
+      </aside>
+    </div>
+  `;
 
   document.querySelectorAll("[data-review]").forEach((button) => {
-    button.addEventListener("click", () => updateReview(button.dataset.review, button.dataset.hit === "true"));
+    button.addEventListener("click", () => updateReview(button.dataset.review, button.dataset.rating));
   });
+  document.querySelectorAll("[data-review-select]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeReviewId = button.dataset.reviewSelect;
+      activeReviewRevealed = false;
+      renderReview();
+    });
+  });
+}
+
+function orderedReviewCards() {
+  return [...state.mistakeCards].sort((a, b) => {
+    const aDue = a.trainingState !== "mastered" && a.nextReview <= todayISO();
+    const bDue = b.trainingState !== "mastered" && b.nextReview <= todayISO();
+    if (aDue !== bDue) return aDue ? -1 : 1;
+    if (a.trainingState === "mastered" && b.trainingState !== "mastered") return 1;
+    if (b.trainingState === "mastered" && a.trainingState !== "mastered") return -1;
+    return a.nextReview.localeCompare(b.nextReview);
+  });
+}
+
+function moveReview(delta) {
+  const items = orderedReviewCards();
+  if (!items.length) return;
+  const index = Math.max(0, items.findIndex((item) => item.id === activeReviewId));
+  const nextIndex = (index + delta + items.length) % items.length;
+  activeReviewId = items[nextIndex].id;
+  activeReviewRevealed = false;
+  renderReview();
 }
 
 function renderSessions() {
@@ -1454,7 +1859,7 @@ function renderImports() {
   const list = [...state.importBatches].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
   byId("import-list").innerHTML = list.length
     ? list.map((batch) => `
-      <div class="session-item">
+      <div class="session-item import-item">
         <div class="session-meta">${formatDate(batch.date)}</div>
         <div>
           <div class="session-topic">${escapeHtml(batch.sourceLabel)}</div>
@@ -1462,12 +1867,14 @@ function renderImports() {
         </div>
         <div class="session-stat">${batch.correct}/${batch.questions}</div>
         <div class="session-stat">${batch.wrong + batch.uncertain} cards</div>
+        <button class="mini-button danger" type="button" data-delete-import="${batch.id}">Delete</button>
       </div>
     `).join("")
     : `<div class="empty-state">No imports yet. Paste a TTP result or drop a screenshot.</div>`;
 }
 
 function renderMocks() {
+  renderScheduleBoard();
   byId("mock-list").innerHTML = state.mocks.map((mock) => {
     const className = `${mock.status === "completed" ? "completed" : ""} ${mock.status === "real" ? "real" : ""}`;
     return `
@@ -1481,6 +1888,80 @@ function renderMocks() {
       </article>
     `;
   }).join("");
+}
+
+function renderScheduleBoard() {
+  const assignment = exactAssignment();
+  const mix = assignment.mix.length ? assignment.mix : adaptiveMix(assignment.count);
+  const tomorrow = addDays(todayISO(), 1);
+  const tomorrowMode = getDayMode(tomorrow);
+  const topThree = rankedTopics().filter((topic) => topic.id !== "unknown" && topic.id !== "verbal-maintenance").slice(0, 3);
+  const due = dueCards().length;
+  const leeches = leechCards().length;
+  const cards = [
+    {
+      title: "Tonight",
+      meta: getDayMode(),
+      bullets: [
+        assignment.reviewBlock,
+        `${assignment.count} TTP questions`,
+        `${assignment.targetAccuracy}% target accuracy`
+      ]
+    },
+    {
+      title: "Tomorrow",
+      meta: tomorrowMode,
+      bullets: [
+        `${topThree[0].ttpModule}: ${topThree[0].assignment}`,
+        tomorrowMode === "Norvestor evening" ? "Keep it short and timed" : "Add a concept block",
+        "Import before stopping"
+      ]
+    },
+    {
+      title: "This week",
+      meta: "Fluid priorities",
+      bullets: topThree.map((topic) => `${topic.name}: ${riskLabel(topic.risk)}`)
+    },
+    {
+      title: "Interleaved set",
+      meta: `${assignment.count} questions`,
+      bullets: mix.map((item) => `${item.count} ${item.topic.name}`)
+    },
+    {
+      title: "Repair load",
+      meta: `${due} due / ${leeches} rebuild`,
+      bullets: [
+        `Daily cap: ${assignment.reviewCap} cards`,
+        due > assignment.reviewCap ? "Stop new volume after cap" : "New volume allowed",
+        leeches ? "Repeat offenders need concept work" : "No repeat offenders"
+      ]
+    },
+    {
+      title: "Weekend",
+      meta: "Deep work",
+      bullets: [
+        "Concept block",
+        "Timed mixed set",
+        "Repair session"
+      ]
+    },
+    {
+      title: "Mock checkpoint",
+      meta: `${nextMock().label} / ${formatDate(nextMock().date)}`,
+      bullets: [
+        nextMock().source,
+        nextMock().purpose,
+        "Blind review before explanations"
+      ]
+    }
+  ];
+  byId("schedule-board").innerHTML = cards.map((card) => `
+    <article class="schedule-card">
+      <span>${escapeHtml(card.meta)}</span>
+      <h3>${escapeHtml(card.title)}</h3>
+      <ul>${card.bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}</ul>
+    </article>
+  `).join("");
 }
 
 function renderTaxonomy() {
@@ -1503,6 +1984,7 @@ function renderAll() {
 
 renderTabs();
 setupQuickActions();
+setupGlobalActions();
 populateForms();
 setupForms();
 setupImport();

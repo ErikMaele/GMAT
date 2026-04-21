@@ -51,7 +51,7 @@
       </button>
       <button class="tab-button" data-tab="mocks" aria-pressed="false">
         <span class="tab-icon" aria-hidden="true">05</span>
-        Mocks
+        Schedule
       </button>
       <button class="tab-button" data-tab="settings" aria-pressed="false">
         <span class="tab-icon" aria-hidden="true">06</span>
@@ -88,9 +88,36 @@
           <div class="metric-grid" id="metric-grid"></div>
         </div>
 
+        <section class="learning-grid" aria-label="Learning engine">
+          <article class="engine-card">
+            <div class="card-heading">
+              <span class="marker marker-green"></span>
+              <h3>Next action loop</h3>
+            </div>
+            <div class="loop-list" id="next-step-list"></div>
+          </article>
+          <article class="engine-card">
+            <div class="card-heading">
+              <span class="marker marker-amber"></span>
+              <h3>Adaptive TTP mix</h3>
+            </div>
+            <div class="mix-list" id="adaptive-mix"></div>
+          </article>
+          <article class="engine-card">
+            <div class="card-heading">
+              <span class="marker marker-coral"></span>
+              <h3>Momentum</h3>
+            </div>
+            <div class="momentum-card" id="momentum-card"></div>
+          </article>
+        </section>
+
         <section class="dream-panel" aria-label="Oxford motivation">
           <div class="dream-image">
-            <img src="assets/christ-church-meadow.jpg" alt="Christ Church Meadow in Oxford">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/9/95/The_Christ_Church_Meadow_from_the_south_east.jpg"
+              alt="Christ Church Meadow in Oxford"
+            >
           </div>
           <div class="dream-copy">
             <p class="eyebrow">Remember the prize</p>
@@ -100,7 +127,10 @@
             </p>
           </div>
           <figure class="alumni-card">
-            <img src="assets/oscar-wilde.jpg" alt="Oscar Wilde portrait by Napoleon Sarony">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/e/e6/Oscar_Wilde_portrait_by_Napoleon_Sarony_-_albumen.jpg"
+              alt="Oscar Wilde portrait by Napoleon Sarony"
+            >
             <figcaption>
               <strong>Oscar Wilde</strong>
               <span>Magdalen College, Oxford</span>
@@ -163,7 +193,10 @@
           <article class="import-card">
             <h3>Paste fallback</h3>
             <textarea id="import-text" rows="13" placeholder="Paste visible TTP or GMAT Club result text here. Example: TTP Algebra Word Problems, Hard, 15 questions, 11 correct, 31 minutes, 4 wrong."></textarea>
-            <button class="primary-button" id="parse-import" type="button">Parse Result</button>
+            <div class="button-row">
+              <button class="primary-button" id="parse-import" type="button">Parse Result</button>
+              <button class="ghost-button" id="prefill-today" type="button">Use Today's Assignment</button>
+            </div>
           </article>
         </div>
 
@@ -286,7 +319,7 @@
             <p class="eyebrow">Mistake repair</p>
             <h2 id="review-title">Due queue</h2>
           </div>
-          <button class="ghost-button" id="seed-error" type="button">Add Sample Item</button>
+          <button class="ghost-button" id="seed-error" type="button">Add Sample Card</button>
         </div>
         <div class="review-grid" id="review-grid"></div>
       </section>
@@ -390,7 +423,13 @@
             <div class="inline-fields">
               <label>
                 Source
-                <input type="text" name="source" value="TTP">
+                <select name="source">
+                  <option>TTP</option>
+                  <option>GMAT Club</option>
+                  <option>mba.com Official</option>
+                  <option>Official Guide</option>
+                  <option>Custom</option>
+                </select>
               </label>
               <label>
                 Time spent
@@ -403,11 +442,33 @@
             </div>
             <label>
               Reference
-              <input type="text" name="reference" placeholder="Module, question ID, or link">
+              <select name="reference">
+                <option>TTP Algebra module</option>
+                <option>TTP Number Properties module</option>
+                <option>TTP Rates / Ratios / Percent module</option>
+                <option>TTP Graphs and Tables set</option>
+                <option>TTP Multi-Source Reasoning set</option>
+                <option>TTP Two-Part Analysis set</option>
+                <option>TTP Data Sufficiency set</option>
+                <option>Official mock review</option>
+                <option>GMAT Club drill</option>
+              </select>
             </label>
             <label>
               Fix rule
-              <textarea name="lesson" rows="4" placeholder="The rule I will apply next time"></textarea>
+              <select name="lessonPreset">
+                <option>Read the exact question stem before looking at answers.</option>
+                <option>Name variables before manipulating equations.</option>
+                <option>Write constraints before substituting numbers.</option>
+                <option>Check units, axes, trend, and outliers before answering.</option>
+                <option>Cap the first approach; guess cleanly if no path appears.</option>
+                <option>Redo the concept example before the next timed set.</option>
+                <option>Slow down: this was a rushed read, not a hard question.</option>
+              </select>
+            </label>
+            <label>
+              Optional note
+              <textarea name="lesson" rows="3" placeholder="Only write if the dropdown is not enough"></textarea>
             </label>
             <button class="primary-button warm" type="submit">Add To Review</button>
           </form>
@@ -428,9 +489,10 @@
         <div class="section-title">
           <div>
             <p class="eyebrow">Calibration</p>
-            <h2 id="mocks-title">Mock schedule</h2>
+            <h2 id="mocks-title">Fluid schedule</h2>
           </div>
         </div>
+        <div class="schedule-board" id="schedule-board"></div>
         <div class="mock-list" id="mock-list"></div>
       </section>
 
