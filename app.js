@@ -1025,6 +1025,9 @@ function renderTabs() {
       button.classList.add("active");
       button.setAttribute("aria-pressed", "true");
       byId(button.dataset.tab).classList.add("active");
+      if (window.location.hash !== `#tab-${button.dataset.tab}`) {
+        history.replaceState(null, "", `#tab-${button.dataset.tab}`);
+      }
     });
   });
 }
@@ -1041,6 +1044,9 @@ function openTab(tabId) {
   button.classList.add("active");
   button.setAttribute("aria-pressed", "true");
   panel.classList.add("active");
+  if (window.location.hash !== `#tab-${tabId}`) {
+    history.replaceState(null, "", `#tab-${tabId}`);
+  }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1141,49 +1147,42 @@ function renderDashboard() {
     <span>${escapeHtml(assignment.module.label)}</span>
   `;
   byId("assignment-spec").innerHTML = [
-    ["Questions", assignment.count],
-    ["Difficulty", assignment.difficulty],
-    ["Mode", assignment.setMode],
+    ["Set", `${assignment.count} questions`],
     ["Target", `${assignment.targetAccuracy}% / ${assignment.targetSeconds}s`],
+    ["Mode", assignment.setMode],
     ["Review", assignment.reviewBlock]
   ].map(([key, value]) => `<div><dt>${key}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
-  byId("today-actions").innerHTML = assignment.actions
+  byId("today-actions").innerHTML = [
+    ["Open TTP", `${assignment.module.module}: ${assignment.module.label}.`],
+    ["Do the set", `${assignment.count} questions. Stop when the block is done.`],
+    ["Debrief", "Save score and cause; repairs are created automatically."]
+  ]
     .map(([title, body]) => `<li><strong>${escapeHtml(title)}</strong><span>${escapeHtml(body)}</span></li>`)
     .join("");
-  byId("routine-strip").innerHTML = ["Repair first", "No hidden scraping", "Screenshot bridge", "Confirm uncertain categories"]
+  const mock = nextMock();
+  byId("routine-strip").innerHTML = [
+    latestBottleneck(),
+    `Next mock: ${formatDate(mock.date)}`,
+    verbalNeedsWork() ? "Verbal needs attention" : "Verbal maintenance only"
+  ]
     .map((item) => `<span class="pill">${item}</span>`)
     .join("");
 
   const metrics = [
     {
-      label: "Quant readiness",
-      value: `${sectionReadiness("Quant")}%`,
-      note: "Accuracy, pace, and review debt"
+      label: "Today",
+      value: `${assignment.count}q`,
+      note: assignment.topic.name
     },
     {
-      label: "DI readiness",
-      value: `${sectionReadiness("DI")}%`,
-      note: "Charts and DI process discipline"
-    },
-    {
-      label: "Review debt",
+      label: "Fix due",
       value: reviewDebtLabel(),
-      note: `${dueCards().length} due / ${state.mistakeCards.length} active cards`
+      note: `${dueCards().length} due cards`
     },
     {
       label: "Score band",
       value: `${band.low}-${band.high}`,
-      note: `${band.readiness}% readiness weighted`
-    },
-    {
-      label: "Study streak",
-      value: `${studyStreak()}d`,
-      note: `${activityDates().length} active dates logged`
-    },
-    {
-      label: "Pacing risk",
-      value: pacingRisk(),
-      note: latestBottleneck()
+      note: `Target ${state.profile.targetTotal}`
     }
   ];
   byId("metric-grid").innerHTML = metrics.map(renderMetric).join("");
@@ -1281,10 +1280,9 @@ function renderCoach() {
     <dl class="coach-stats">
       <div><dt>Set</dt><dd>${block.questions} questions</dd></div>
       <div><dt>Target</dt><dd>${block.targetAccuracy}% / ${block.targetSeconds}s</dd></div>
-      <div><dt>Mode</dt><dd>${escapeHtml(block.setMode)}</dd></div>
       <div><dt>Pace</dt><dd>${escapeHtml(paceText)}</dd></div>
     </dl>
-    <div class="coach-warning">${escapeHtml(block.reviewBlock)}</div>
+    <div class="coach-warning">${escapeHtml(block.setMode)} / ${escapeHtml(block.reviewBlock)}</div>
   `;
 
   byId("block-timer").textContent = formatDuration(elapsed);
@@ -1315,14 +1313,13 @@ function renderCoach() {
     setSelectIfOption(form.difficulty, block.difficulty.includes("Hard") ? "Hard" : "Mixed");
   }
 
-  byId("debrief-causes").innerHTML = failureCauses
-    .filter((cause) => cause.id !== "unknown")
-    .map((cause, index) => `
-      <label class="choice-chip">
-        <input type="radio" name="failureCause" value="${cause.id}" ${index === 0 ? "checked" : ""}>
-        <span>${escapeHtml(cause.label)}</span>
-      </label>
-    `).join("");
+  const causeSelect = byId("debrief-cause-select");
+  if (causeSelect) {
+    causeSelect.innerHTML = failureCauses
+      .filter((cause) => cause.id !== "unknown")
+      .map((cause) => `<option value="${cause.id}">${escapeHtml(cause.label)}</option>`)
+      .join("");
+  }
 }
 
 function latestBottleneck() {
@@ -2314,3 +2311,5 @@ setupBackup();
 setupBlockTicker();
 fillImportForm(parseImportText(""));
 renderAll();
+const initialTab = window.location.hash.replace("#", "").replace(/^tab-/, "");
+if (initialTab && byId(initialTab)?.classList.contains("tab-panel")) openTab(initialTab);

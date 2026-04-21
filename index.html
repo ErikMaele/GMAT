@@ -80,18 +80,24 @@
               <h3 id="today-mode">Loading</h3>
             </div>
             <div class="assignment-hero" id="assignment-hero"></div>
+            <div class="quick-actions">
+              <button class="primary-button warm" type="button" data-start-block>Start Guided Block</button>
+              <button class="ghost-button" type="button" data-jump="review">Fix Mistakes</button>
+              <button class="ghost-button" type="button" data-jump="import">Import Result</button>
+            </div>
             <dl class="assignment-spec" id="assignment-spec"></dl>
             <ol class="action-list compact-list" id="today-actions"></ol>
             <div class="routine-strip" id="routine-strip"></div>
-            <div class="quick-actions">
-              <button class="primary-button warm" type="button" data-start-block>Start Guided Block</button>
-              <button class="primary-button" type="button" data-jump="import">Import Result</button>
-              <button class="ghost-button" type="button" data-jump="review">Fix Mistakes</button>
-            </div>
           </article>
 
           <div class="metric-grid" id="metric-grid"></div>
         </div>
+
+        <details class="detail-drawer">
+          <summary>
+            <span>Show the reasoning</span>
+            <strong>Adaptive mix, priorities, readiness, and Oxford fuel</strong>
+          </summary>
 
         <section class="learning-grid" aria-label="Learning engine">
           <article class="engine-card">
@@ -169,6 +175,7 @@
             <div class="next-mock" id="next-mock"></div>
           </article>
         </section>
+        </details>
       </section>
 
       <section class="tab-panel" id="coach" aria-labelledby="coach-title">
@@ -203,13 +210,13 @@
             <div class="pace-ladder" id="pace-ladder"></div>
           </article>
 
-          <article class="coach-card protocol-card">
-            <div class="card-heading">
+          <details class="coach-card protocol-card">
+            <summary class="card-heading">
               <span class="marker marker-amber"></span>
               <h3>Exam protocol</h3>
-            </div>
+            </summary>
             <div id="exam-protocol"></div>
-          </article>
+          </details>
         </div>
 
         <section class="content-band coach-debrief">
@@ -237,7 +244,10 @@
               </label>
             </div>
 
-            <div class="choice-row" id="debrief-causes" aria-label="Primary failure cause"></div>
+            <label>
+              Primary cause
+              <select name="failureCause" id="debrief-cause-select"></select>
+            </label>
 
             <div class="inline-fields">
               <label>
