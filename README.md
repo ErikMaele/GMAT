@@ -55,7 +55,19 @@ The import flow uses screenshots or pasted visible text. It does not automate lo
 
 OCR loads Tesseract.js only when you click **Run OCR**. If it is unavailable, paste the visible result text into the fallback box.
 
-The `bridge-extension/` folder contains a prototype Chrome extension for user-triggered visible-page capture. It uses the active tab after a click, copies or downloads a screenshot, and leaves parsing to the local app. It is not hidden account scraping.
+The `bridge-extension/` folder contains a prototype Chrome extension for user-triggered visible-page capture. It uses the active tab after a click, copies or downloads a screenshot, can open the Import tab after capture, and leaves parsing to the local app. It is not hidden account scraping.
+
+## Capture Bridge
+
+Current low-friction workflow:
+
+1. Open a visible TTP, GMAT Club, or mba.com result page.
+2. Click the unpacked **GMAT Optimizer Capture Bridge** extension.
+3. Choose **Copy And Open App**.
+4. Paste into the Import tab with Ctrl+V.
+5. Run OCR, confirm uncertain fields, and save.
+
+The extension is intentionally user-triggered. It does not store credentials, does not read hidden pages, and does not scrape account data in the background.
 
 ## Mistake Repair
 
@@ -66,3 +78,4 @@ The Fix tab shows one card at a time. First attempt the redo, then reveal the fi
 - `assets/radcliffe-square.jpg` - Radcliffe Square photo by Txllxt TxllxT, Wikimedia Commons, CC BY-SA 4.0.
 - `assets/christ-church-meadow.jpg` - Christ Church Meadow photo by Ozeye, Wikimedia Commons, CC BY-SA 3.0 / GFDL.
 - `assets/oscar-wilde.jpg` - Oscar Wilde portrait by Napoleon Sarony, Library of Congress / Wikimedia Commons, public domain.
+- Oxford ribbon/gallery also uses Wikimedia Commons images for All Souls, Bridge of Sighs, Duke Humfrey's Library, John Locke, and Adam Smith.

@@ -146,6 +146,58 @@ const ttpModules = topics
     priority: topic.priority
   }));
 
+const oxfordMuses = [
+  {
+    title: "Radcliffe Square",
+    kicker: "Architecture",
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Oxford_-_Radcliffe_Square_-_View_South_towards_University_Church_of_St_Mary_the_Virgin_along_%28right%29_the_Radcliffe_Camera_1737-48_by_James_Gibbs_%26_%28left%29_All_Souls_College_1438.jpg/1280px-Oxford_-_Radcliffe_Square_-_View_South_towards_University_Church_of_St_Mary_the_Virgin_along_%28right%29_the_Radcliffe_Camera_1737-48_by_James_Gibbs_%26_%28left%29_All_Souls_College_1438.jpg",
+    quote: "Make the score feel smaller than the room you want to enter.",
+    person: "Daily rule"
+  },
+  {
+    title: "Oscar Wilde",
+    kicker: "Magdalen College",
+    image: "https://upload.wikimedia.org/wikipedia/commons/e/e6/Oscar_Wilde_portrait_by_Napoleon_Sarony_-_albumen.jpg",
+    quote: "The truth is rarely pure and never simple.",
+    person: "Oscar Wilde"
+  },
+  {
+    title: "John Locke",
+    kicker: "Christ Church",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/John%20Locke%20by%20Sir%20Godfrey%20Kneller%2C%20Bt.jpg?width=700",
+    quote: "No man's knowledge here can go beyond his experience.",
+    person: "John Locke"
+  },
+  {
+    title: "Adam Smith",
+    kicker: "Balliol College",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Adam%20Smith%20The%20Muir%20portrait%20%28cropped%202%29.jpg?width=700",
+    quote: "Science is the great antidote to enthusiasm and superstition.",
+    person: "Adam Smith"
+  },
+  {
+    title: "Bridge of Sighs",
+    kicker: "Hertford College",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/University%20Of%20Oxford%20The%20Bridge%20Of%20Sighs.jpg?width=1000",
+    quote: "A good system lets the hard work feel inevitable.",
+    person: "Bridge note"
+  },
+  {
+    title: "Duke Humfrey's Library",
+    kicker: "Bodleian Library",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Duke%20Humfrey%27s%20Library%20Interior%206%2C%20Bodleian%20Library%2C%20Oxford%2C%20UK%20-%20Diliff.jpg?width=1000",
+    quote: "Old mistakes belong on the shelf only after you can retrieve them.",
+    person: "Memory rule"
+  },
+  {
+    title: "All Souls",
+    kicker: "Radcliffe Square",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Oxford%20-%20All%20Souls%20College%20-%20from%20Radcliffe%20square.jpg?width=1000",
+    quote: "Quiet repetition is how ambition becomes evidence.",
+    person: "Practice rule"
+  }
+];
+
 const sectionOptions = ["Quant", "DI", "Verbal", "Unknown"];
 const reviewIntervals = [1, 3, 7, 14, 30];
 const desiredRetention = 0.9;
@@ -1245,6 +1297,34 @@ function renderMetric(metric) {
       <span class="metric-note">${escapeHtml(metric.note)}</span>
     </article>
   `;
+}
+
+function renderOxfordInspiration() {
+  const dayIndex = Math.abs(dateDiff("2026-01-01", todayISO())) % oxfordMuses.length;
+  const muse = oxfordMuses[dayIndex];
+  const image = byId("oxford-ribbon-image");
+  if (image) {
+    image.src = muse.image;
+    image.alt = muse.title;
+    byId("oxford-ribbon-kicker").textContent = muse.kicker;
+    byId("oxford-ribbon-title").textContent = muse.title;
+    byId("oxford-ribbon-quote").textContent = muse.quote;
+  }
+
+  const gallery = byId("oxford-gallery");
+  if (!gallery) return;
+  const cards = [0, 1, 2, 3].map((offset) => oxfordMuses[(dayIndex + offset) % oxfordMuses.length]);
+  gallery.innerHTML = cards.map((item) => `
+    <article class="oxford-card">
+      <img src="${item.image}" alt="${escapeHtml(item.title)}">
+      <div>
+        <span>${escapeHtml(item.kicker)}</span>
+        <strong>${escapeHtml(item.title)}</strong>
+        <q>${escapeHtml(item.quote)}</q>
+        <em>${escapeHtml(item.person)}</em>
+      </div>
+    </article>
+  `).join("");
 }
 
 function renderMemoryCoach(assignment) {
@@ -2375,6 +2455,7 @@ function renderTaxonomy() {
 }
 
 function renderAll() {
+  renderOxfordInspiration();
   renderDashboard();
   renderCoach();
   renderSessions();

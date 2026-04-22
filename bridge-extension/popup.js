@@ -1,4 +1,5 @@
 const statusLine = document.getElementById("status");
+const appImportUrl = "https://erikmaele.github.io/GMAT/#tab-import";
 
 function setStatus(message) {
   statusLine.textContent = message;
@@ -19,9 +20,18 @@ async function copyCapture() {
       })
     ]);
     setStatus("Copied. Open the GMAT Optimizer Import tab and paste.");
+    return true;
   } catch (error) {
     setStatus(`Copy failed: ${error.message}`);
+    return false;
   }
+}
+
+async function copyAndOpenApp() {
+  const copied = await copyCapture();
+  if (!copied) return;
+  await chrome.tabs.create({ url: appImportUrl });
+  setStatus("Copied. Paste into Import with Ctrl+V.");
 }
 
 async function downloadCapture() {
@@ -40,5 +50,6 @@ async function downloadCapture() {
   }
 }
 
+document.getElementById("copy-open-capture").addEventListener("click", copyAndOpenApp);
 document.getElementById("copy-capture").addEventListener("click", copyCapture);
 document.getElementById("download-capture").addEventListener("click", downloadCapture);

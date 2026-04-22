@@ -14,8 +14,8 @@ Workflow:
 
 1. Open a visible TTP, GMAT Club, or mba.com result page.
 2. Click the extension.
-3. Choose **Copy Screenshot**.
-4. Open the GMAT Optimizer Import tab and paste.
+3. Choose **Copy And Open App**.
+4. Paste into the Import tab with Ctrl+V.
 5. Run OCR and confirm the parsed batch.
 
 This is the preferred bridge direction unless TTP or mba.com offers an official export/API route.

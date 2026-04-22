@@ -248,6 +248,61 @@ h3 {
   color: var(--white);
 }
 
+.oxford-ribbon {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem clamp(1rem, 3vw, 2.2rem);
+  border-bottom: 1px solid rgba(217, 232, 242, 0.16);
+  background: linear-gradient(90deg, rgba(0, 21, 46, 0.96), rgba(0, 33, 71, 0.9));
+  color: var(--white);
+}
+
+.oxford-ribbon-media {
+  overflow: hidden;
+  width: 7.5rem;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: var(--oxford-deep);
+}
+
+.oxford-ribbon-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.oxford-ribbon-copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.oxford-ribbon-copy span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.oxford-ribbon-copy strong {
+  font-size: 1.15rem;
+}
+
+.oxford-ribbon-copy q {
+  display: block;
+  max-width: 58rem;
+  color: var(--oxford-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 main {
   padding: clamp(1rem, 3vw, 2.2rem);
 }
@@ -659,6 +714,61 @@ main {
 .insight-title,
 .insight-title h2 {
   color: var(--white);
+}
+
+.oxford-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.oxford-card {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 10rem auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.oxford-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(1.03);
+}
+
+.oxford-card div {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem;
+}
+
+.oxford-card span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.oxford-card strong {
+  font-size: 1.05rem;
+}
+
+.oxford-card q {
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.2;
+}
+
+.oxford-card em {
+  color: var(--oxford);
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .detail-drawer {
@@ -1890,6 +2000,7 @@ main {
   .dream-panel,
   .split-layout,
   .bridge-ladder,
+  .oxford-gallery,
   .flashcard-layout,
   .schedule-board,
   .mock-list,
@@ -1904,6 +2015,23 @@ main {
 }
 
 @media (max-width: 760px) {
+  .oxford-ribbon {
+    grid-template-columns: 1fr;
+    padding: 0.75rem 1rem;
+  }
+
+  .oxford-ribbon-media {
+    display: none;
+  }
+
+  .oxford-ribbon-copy strong {
+    font-size: 1rem;
+  }
+
+  .oxford-ribbon-copy q {
+    font-size: 0.98rem;
+  }
+
   .app-header {
     grid-template-columns: 1fr;
     min-height: 24rem;
