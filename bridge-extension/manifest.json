@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "GMAT Optimizer Capture Bridge",
+  "version": "0.1.0",
+  "description": "User-triggered visible-page capture for TTP and GMAT result pages.",
+  "permissions": ["activeTab", "clipboardWrite", "downloads"],
+  "action": {
+    "default_title": "Capture GMAT result",
+    "default_popup": "popup.html"
+  }
+}

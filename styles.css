@@ -1294,6 +1294,50 @@ main {
   resize: vertical;
 }
 
+.bridge-ladder {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.bridge-step {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.bridge-step span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.bridge-step strong {
+  font-size: 1.05rem;
+}
+
+.bridge-step p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 760;
+}
+
+.bridge-step.best {
+  border-color: rgba(199, 163, 74, 0.72);
+  background: linear-gradient(135deg, var(--gold-soft), var(--panel));
+}
+
+.bridge-step.caution {
+  border-color: rgba(145, 72, 62, 0.3);
+  background: var(--coral-soft);
+}
+
 .import-review-wrap {
   margin-top: 1rem;
 }
@@ -1845,6 +1889,7 @@ main {
   .import-layout,
   .dream-panel,
   .split-layout,
+  .bridge-ladder,
   .flashcard-layout,
   .schedule-board,
   .mock-list,

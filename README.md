@@ -55,6 +55,8 @@ The import flow uses screenshots or pasted visible text. It does not automate lo
 
 OCR loads Tesseract.js only when you click **Run OCR**. If it is unavailable, paste the visible result text into the fallback box.
 
+The `bridge-extension/` folder contains a prototype Chrome extension for user-triggered visible-page capture. It uses the active tab after a click, copies or downloads a screenshot, and leaves parsing to the local app. It is not hidden account scraping.
+
 ## Mistake Repair
 
 The Fix tab shows one card at a time. First attempt the redo, then reveal the fix rule. **Again** keeps the card due, **Hard** repeats it tomorrow, **Good** advances the normal interval, and **Easy** skips ahead faster. Imported batches can be deleted from Import history, which also removes the generated review cards from that import.

@@ -315,8 +315,8 @@
           <article class="import-card">
             <div class="drop-zone" id="drop-zone">
               <input id="screenshot-input" type="file" accept="image/*">
-              <strong>Drop or choose a TTP result screenshot</strong>
-              <span>OCR runs in the browser when the engine is available. Nothing logs into TTP.</span>
+              <strong>Drop, choose, or paste a result screenshot</strong>
+              <span>OCR runs locally when available. Nothing logs into TTP or mba.com.</span>
             </div>
             <img class="screenshot-preview" id="screenshot-preview" alt="Imported screenshot preview">
             <div class="button-row">
@@ -335,6 +335,24 @@
             </div>
           </article>
         </div>
+
+        <section class="bridge-ladder" aria-label="Frictionless capture ladder">
+          <article class="bridge-step best">
+            <span>Best next bridge</span>
+            <strong>User-triggered capture</strong>
+            <p>Chrome extension button captures the visible TTP or mba.com result page, then sends a screenshot to this local parser.</p>
+          </article>
+          <article class="bridge-step">
+            <span>Works now</span>
+            <strong>Clipboard or screenshot</strong>
+            <p>Copy result text or paste a screenshot. The app parses, classifies, and asks only for confirmation.</p>
+          </article>
+          <article class="bridge-step caution">
+            <span>Avoid</span>
+            <strong>Hidden account scraping</strong>
+            <p>Background login automation is brittle, likely non-compliant, and puts credentials where they do not belong.</p>
+          </article>
+        </section>
 
         <section class="content-band import-review-wrap">
           <div class="section-title compact">
