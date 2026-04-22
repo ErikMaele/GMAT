@@ -8,7 +8,7 @@ Open `index.html` in a browser. The app stores practice sessions, guided blocks,
 
 This folder is ready for GitHub Pages. Publish the repository from the root folder and set Pages to deploy from the default branch root. The `.nojekyll` file is included so static assets are served directly.
 
-The live page uses Wikimedia image URLs for the Oxford hero and motivation images so the first page still renders even if the local `assets/` folder is not uploaded correctly.
+The live page uses one rotating Oxford Vault card sourced from Wikimedia image URLs, so the visual motivation stays focused instead of spreading across the whole app.
 
 ## V6 Coach Workflow
 
@@ -36,7 +36,7 @@ V6 combines GMAT-specific constraints with patterns from TTP, GMAT Club, UWorld,
 - Confidence-based review: Again / Hard / Good / Easy ratings replace binary pass/fail.
 - Adaptive interleaving: daily TTP sets mix the highest-risk topics.
 - Review debt priority: due repairs outrank new practice on work nights.
-- Oxford blue interface: the main app now uses Oxford blue as the background system, with parchment panels and gold/sage/burgundy accents.
+- Oxford blue interface: the main app uses Oxford blue as the background system, with one rotating Oxford Vault card for architecture/alumni inspiration.
 - Backup portability: exports/imports guided blocks as well as sessions and repair cards.
 
 ## Current Product Logic
@@ -73,9 +73,8 @@ The extension is intentionally user-triggered. It does not store credentials, do
 
 The Fix tab shows one card at a time. First attempt the redo, then reveal the fix rule. **Again** keeps the card due, **Hard** repeats it tomorrow, **Good** advances the normal interval, and **Easy** skips ahead faster. Imported batches can be deleted from Import history, which also removes the generated review cards from that import.
 
-## Oxford Theme Assets
+## Oxford Vault
 
-- `assets/radcliffe-square.jpg` - Radcliffe Square photo by Txllxt TxllxT, Wikimedia Commons, CC BY-SA 4.0.
-- `assets/christ-church-meadow.jpg` - Christ Church Meadow photo by Ozeye, Wikimedia Commons, CC BY-SA 3.0 / GFDL.
-- `assets/oscar-wilde.jpg` - Oscar Wilde portrait by Napoleon Sarony, Library of Congress / Wikimedia Commons, public domain.
-- Oxford ribbon/gallery also uses Wikimedia Commons images for All Souls, Bridge of Sighs, Duke Humfrey's Library, John Locke, and Adam Smith.
+The Oxford atmosphere is centralized in one card on Today. The app keeps an `oxfordVault` storage array in `app.js` with images, titles, college/place labels, quotes, and credits. On each app open, `nextOxfordVaultItem()` advances a local cursor in browser storage and shows exactly one item.
+
+The vault includes Wikimedia-sourced architecture/alumni images for Radcliffe Square, Christ Church Meadow, Bridge of Sighs, Duke Humfrey's Library, All Souls, Christ Church Hall, Oscar Wilde, John Locke, Adam Smith, T. E. Lawrence, and the Shelley Memorial.

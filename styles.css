@@ -38,6 +38,7 @@ body {
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.45;
+  overflow-x: hidden;
 }
 
 button,
@@ -57,17 +58,17 @@ button {
   gap: 2rem;
   align-items: end;
   padding: clamp(1.25rem, 4vw, 3rem);
-  min-height: clamp(20rem, 36vh, 28rem);
-  border-bottom: 1px solid var(--line);
+  min-height: clamp(15rem, 28vh, 22rem);
+  border-bottom: 1px solid rgba(217, 232, 242, 0.18);
   background:
-    linear-gradient(90deg, rgba(0, 21, 46, 0.92) 0%, rgba(0, 33, 71, 0.78) 42%, rgba(0, 33, 71, 0.22) 100%),
-    linear-gradient(180deg, rgba(0, 33, 71, 0.24), rgba(199, 163, 74, 0.12)),
-    url("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Oxford_-_Radcliffe_Square_-_View_South_towards_University_Church_of_St_Mary_the_Virgin_along_%28right%29_the_Radcliffe_Camera_1737-48_by_James_Gibbs_%26_%28left%29_All_Souls_College_1438.jpg/1280px-Oxford_-_Radcliffe_Square_-_View_South_towards_University_Church_of_St_Mary_the_Virgin_along_%28right%29_the_Radcliffe_Camera_1737-48_by_James_Gibbs_%26_%28left%29_All_Souls_College_1438.jpg") center / cover;
+    radial-gradient(circle at 16% 18%, rgba(217, 232, 242, 0.12), transparent 24rem),
+    linear-gradient(135deg, var(--oxford-deep), var(--oxford) 54%, #061f3d);
   color: var(--white);
 }
 
 .header-copy {
   max-width: 58rem;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -105,35 +106,11 @@ h3 {
 }
 
 .header-meta {
-  max-width: 45rem;
+  max-width: min(45rem, 100%);
   margin-bottom: 0;
   color: rgba(255, 255, 255, 0.84);
   font-size: clamp(1rem, 2vw, 1.2rem);
-}
-
-.hero-quote {
-  display: grid;
-  gap: 0.35rem;
-  max-width: 33rem;
-  margin-top: 0.9rem;
-  padding: 0.75rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 8px;
-  background: rgba(0, 33, 71, 0.34);
-  backdrop-filter: blur(10px);
-}
-
-.hero-quote span {
-  color: var(--amber-soft);
-  font-size: 0.76rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.hero-quote q {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.1rem, 2vw, 1.55rem);
-  line-height: 1.2;
+  overflow-wrap: break-word;
 }
 
 .dream-lockup {
@@ -246,61 +223,6 @@ h3 {
 .active .tab-icon {
   background: var(--oxford);
   color: var(--white);
-}
-
-.oxford-ribbon {
-  display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr);
-  gap: 1rem;
-  align-items: center;
-  padding: 0.85rem clamp(1rem, 3vw, 2.2rem);
-  border-bottom: 1px solid rgba(217, 232, 242, 0.16);
-  background: linear-gradient(90deg, rgba(0, 21, 46, 0.96), rgba(0, 33, 71, 0.9));
-  color: var(--white);
-}
-
-.oxford-ribbon-media {
-  overflow: hidden;
-  width: 7.5rem;
-  aspect-ratio: 16 / 9;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 8px;
-  background: var(--oxford-deep);
-}
-
-.oxford-ribbon-media img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.oxford-ribbon-copy {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.oxford-ribbon-copy span {
-  color: var(--gold);
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.oxford-ribbon-copy strong {
-  font-size: 1.15rem;
-}
-
-.oxford-ribbon-copy q {
-  display: block;
-  max-width: 58rem;
-  color: var(--oxford-soft);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1rem, 1.8vw, 1.35rem);
-  line-height: 1.2;
-  overflow-wrap: break-word;
-  white-space: normal;
 }
 
 main {
@@ -522,81 +444,6 @@ main {
   align-items: center;
 }
 
-.dream-panel {
-  display: grid;
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1.2fr) minmax(11rem, 0.45fr);
-  gap: 1rem;
-  align-items: stretch;
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(0, 33, 71, 0.06), rgba(184, 137, 44, 0.12)),
-    var(--panel);
-  box-shadow: var(--shadow);
-}
-
-.dream-image,
-.alumni-card {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--white);
-}
-
-.dream-image img,
-.alumni-card img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dream-copy {
-  display: grid;
-  align-content: center;
-  gap: 0.75rem;
-  padding: clamp(0.5rem, 2vw, 1.2rem);
-}
-
-.dream-copy h2 {
-  max-width: 19ch;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.8rem, 4vw, 3.4rem);
-  line-height: 1;
-}
-
-.dream-copy p {
-  max-width: 50rem;
-  margin: 0;
-  color: var(--muted);
-  font-weight: 760;
-}
-
-.alumni-card {
-  display: grid;
-  grid-template-rows: minmax(12rem, 1fr) auto;
-  margin: 0;
-}
-
-.alumni-card img {
-  max-height: 18rem;
-  object-position: center top;
-}
-
-.alumni-card figcaption {
-  display: grid;
-  gap: 0.15rem;
-  padding: 0.75rem;
-}
-
-.alumni-card span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 800;
-}
-
 .metric-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -707,6 +554,56 @@ main {
   font-weight: 800;
 }
 
+.oxford-vault-card {
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.72fr) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.oxford-vault-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 10.5rem;
+  object-fit: cover;
+  background: var(--oxford-deep);
+}
+
+.oxford-vault-copy {
+  display: grid;
+  gap: 0.35rem;
+  align-content: center;
+  padding: 0.9rem;
+}
+
+.oxford-vault-copy span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.oxford-vault-copy strong {
+  font-size: 1.1rem;
+}
+
+.oxford-vault-copy q {
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.2;
+}
+
+.oxford-vault-copy em {
+  color: var(--oxford);
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
 .insight-sections {
   margin-top: 1rem;
 }
@@ -714,61 +611,6 @@ main {
 .insight-title,
 .insight-title h2 {
   color: var(--white);
-}
-
-.oxford-gallery {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.oxford-card {
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: 10rem auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-}
-
-.oxford-card img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(0.92) contrast(1.03);
-}
-
-.oxford-card div {
-  display: grid;
-  gap: 0.3rem;
-  padding: 0.85rem;
-}
-
-.oxford-card span {
-  color: var(--gold);
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.oxford-card strong {
-  font-size: 1.05rem;
-}
-
-.oxford-card q {
-  color: var(--muted);
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.2;
-}
-
-.oxford-card em {
-  color: var(--oxford);
-  font-style: normal;
-  font-size: 0.78rem;
-  font-weight: 900;
 }
 
 .detail-drawer {
@@ -822,7 +664,6 @@ main {
   margin: 0 1rem 1rem;
 }
 
-.detail-drawer > .dream-panel,
 .detail-drawer > .content-band,
 .detail-drawer > .split-layout {
   margin: 1rem;
@@ -1997,10 +1838,8 @@ main {
   .coach-layout,
   .form-grid,
   .import-layout,
-  .dream-panel,
   .split-layout,
   .bridge-ladder,
-  .oxford-gallery,
   .flashcard-layout,
   .schedule-board,
   .mock-list,
@@ -2015,23 +1854,6 @@ main {
 }
 
 @media (max-width: 760px) {
-  .oxford-ribbon {
-    grid-template-columns: 1fr;
-    padding: 0.75rem 1rem;
-  }
-
-  .oxford-ribbon-media {
-    display: none;
-  }
-
-  .oxford-ribbon-copy strong {
-    font-size: 1rem;
-  }
-
-  .oxford-ribbon-copy q {
-    font-size: 0.98rem;
-  }
-
   .app-header {
     grid-template-columns: 1fr;
     min-height: 24rem;
@@ -2066,14 +1888,6 @@ main {
   .compact-list,
   .taxonomy-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dream-panel {
-    padding: 0.75rem;
-  }
-
-  .dream-image {
-    min-height: 11rem;
   }
 
   .session-item {

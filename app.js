@@ -1,5 +1,6 @@
 const STORAGE_KEY_V2 = "erik-gmat-optimizer-v2";
 const STORAGE_KEY_V1 = "erik-gmat-optimizer-v1";
+const OXFORD_VAULT_CURSOR_KEY = "erik-gmat-oxford-vault-cursor";
 const SCHEMA_VERSION = 4;
 
 const failureCauses = [
@@ -146,7 +147,8 @@ const ttpModules = topics
     priority: topic.priority
   }));
 
-const oxfordMuses = [
+// Central Oxford vault: the UI renders one stored item per app open.
+const oxfordVault = [
   {
     title: "Radcliffe Square",
     kicker: "Architecture",
@@ -176,6 +178,13 @@ const oxfordMuses = [
     person: "Adam Smith"
   },
   {
+    title: "Christ Church Meadow",
+    kicker: "Oxford landscape",
+    image: "https://upload.wikimedia.org/wikipedia/commons/9/95/The_Christ_Church_Meadow_from_the_south_east.jpg",
+    quote: "To move freely you must be deeply rooted.",
+    person: "Vault note"
+  },
+  {
     title: "Bridge of Sighs",
     kicker: "Hertford College",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/University%20Of%20Oxford%20The%20Bridge%20Of%20Sighs.jpg?width=1000",
@@ -195,6 +204,27 @@ const oxfordMuses = [
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Oxford%20-%20All%20Souls%20College%20-%20from%20Radcliffe%20square.jpg?width=1000",
     quote: "Quiet repetition is how ambition becomes evidence.",
     person: "Practice rule"
+  },
+  {
+    title: "Christ Church Hall",
+    kicker: "College architecture",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Christ%20Church%20Hall%2C%20Oxford.jpg?width=1000",
+    quote: "Great rooms ask for preparation before they grant belonging.",
+    person: "Vault note"
+  },
+  {
+    title: "T. E. Lawrence",
+    kicker: "Jesus College",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/TE%20Lawrence%20by%20Lowell%20Thomas%201919.jpg?width=700",
+    quote: "All men dream: but not equally.",
+    person: "T. E. Lawrence"
+  },
+  {
+    title: "Shelley Memorial",
+    kicker: "University College",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/Shelley%20Memorial%2C%20University%20College%2C%20Oxford.jpg?width=1000",
+    quote: "The mind is its own place.",
+    person: "John Milton"
   }
 ];
 
@@ -401,6 +431,7 @@ let lastParsedImport = null;
 let activeReviewId = null;
 let activeReviewRevealed = false;
 let blockTicker = null;
+let activeOxfordVaultItem = null;
 
 function uid(prefix = "id") {
   const random = crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1299,32 +1330,29 @@ function renderMetric(metric) {
   `;
 }
 
-function renderOxfordInspiration() {
-  const dayIndex = Math.abs(dateDiff("2026-01-01", todayISO())) % oxfordMuses.length;
-  const muse = oxfordMuses[dayIndex];
-  const image = byId("oxford-ribbon-image");
-  if (image) {
-    image.src = muse.image;
-    image.alt = muse.title;
-    byId("oxford-ribbon-kicker").textContent = muse.kicker;
-    byId("oxford-ribbon-title").textContent = muse.title;
-    byId("oxford-ribbon-quote").textContent = muse.quote;
+function nextOxfordVaultItem() {
+  let nextIndex = 0;
+  try {
+    const rawPrevious = localStorage.getItem(OXFORD_VAULT_CURSOR_KEY);
+    const previous = rawPrevious === null ? -1 : Number(rawPrevious);
+    nextIndex = Number.isInteger(previous) && previous >= 0 ? (previous + 1) % oxfordVault.length : 0;
+    localStorage.setItem(OXFORD_VAULT_CURSOR_KEY, String(nextIndex));
+  } catch {
+    nextIndex = Math.abs(dateDiff("2026-01-01", todayISO())) % oxfordVault.length;
   }
+  return oxfordVault[nextIndex];
+}
 
-  const gallery = byId("oxford-gallery");
-  if (!gallery) return;
-  const cards = [0, 1, 2, 3].map((offset) => oxfordMuses[(dayIndex + offset) % oxfordMuses.length]);
-  gallery.innerHTML = cards.map((item) => `
-    <article class="oxford-card">
-      <img src="${item.image}" alt="${escapeHtml(item.title)}">
-      <div>
-        <span>${escapeHtml(item.kicker)}</span>
-        <strong>${escapeHtml(item.title)}</strong>
-        <q>${escapeHtml(item.quote)}</q>
-        <em>${escapeHtml(item.person)}</em>
-      </div>
-    </article>
-  `).join("");
+function renderOxfordVault() {
+  const item = activeOxfordVaultItem || oxfordVault[0];
+  const image = byId("oxford-vault-image");
+  if (!image) return;
+  image.src = item.image;
+  image.alt = item.title;
+  byId("oxford-vault-kicker").textContent = item.kicker;
+  byId("oxford-vault-title").textContent = item.title;
+  byId("oxford-vault-quote").textContent = item.quote;
+  byId("oxford-vault-credit").textContent = item.person;
 }
 
 function renderMemoryCoach(assignment) {
@@ -2455,7 +2483,7 @@ function renderTaxonomy() {
 }
 
 function renderAll() {
-  renderOxfordInspiration();
+  renderOxfordVault();
   renderDashboard();
   renderCoach();
   renderSessions();
@@ -2468,6 +2496,7 @@ function renderAll() {
 renderTabs();
 setupQuickActions();
 setupGlobalActions();
+activeOxfordVaultItem = nextOxfordVaultItem();
 populateForms();
 setupForms();
 setupImport();
