@@ -148,6 +148,7 @@ const ttpModules = topics
 
 const sectionOptions = ["Quant", "DI", "Verbal", "Unknown"];
 const reviewIntervals = [1, 3, 7, 14, 30];
+const desiredRetention = 0.9;
 const reviewRatings = {
   again: { label: "Again", intervalMove: -99, miss: true, state: "failed_redo" },
   hard: { label: "Hard", intervalMove: 0, miss: false, state: "improving" },
@@ -586,6 +587,48 @@ function dueCards(date = todayISO()) {
   return state.mistakeCards.filter((card) => card.trainingState !== "mastered" && card.nextReview <= date);
 }
 
+function cardLastTouch(card) {
+  return card.reviewedAt || card.date || todayISO();
+}
+
+function cardStability(card) {
+  const interval = reviewIntervals[Math.max(0, Number(card.intervalIndex || 0))] || 1;
+  const ease = Math.max(1.3, Number(card.ease || 2.5));
+  const lapsePenalty = Math.max(0.35, 1 - Number(card.misses || 0) * 0.12);
+  return Math.max(1, interval * ease * lapsePenalty);
+}
+
+function predictedRetrievability(card, date = todayISO()) {
+  if (card.trainingState === "mastered") return 1;
+  const elapsed = Math.max(0, dateDiff(cardLastTouch(card), date));
+  const stability = cardStability(card);
+  return Math.max(0.05, Math.min(0.99, Math.exp(Math.log(desiredRetention) * (elapsed / stability))));
+}
+
+function memoryRiskScore(card, date = todayISO()) {
+  if (card.trainingState === "mastered") return 0;
+  const recallGap = Math.max(0, desiredRetention - predictedRetrievability(card, date)) * 100;
+  const overdue = Math.max(0, -dateDiff(date, card.nextReview || date));
+  const missLoad = Number(card.misses || 0) * 8;
+  const uncertainty = card.timingFlag === "uncertain_correct" || card.trainingState === "failed_redo" ? 7 : 0;
+  return Math.round(recallGap + overdue * 4 + missLoad + uncertainty);
+}
+
+function memoryRiskCards(date = todayISO()) {
+  return state.mistakeCards
+    .filter((card) => card.trainingState !== "mastered")
+    .map((card) => ({ card, risk: memoryRiskScore(card, date), recall: predictedRetrievability(card, date) }))
+    .filter((item) => item.risk > 0 || item.card.nextReview <= date)
+    .sort((a, b) => b.risk - a.risk || a.card.nextReview.localeCompare(b.card.nextReview));
+}
+
+function memoryRiskForTopic(topicId) {
+  return memoryRiskCards()
+    .filter((item) => item.card.topic === topicId)
+    .slice(0, 4)
+    .reduce((sum, item) => sum + item.risk, 0);
+}
+
 function topicDueCount(topicId, date = todayISO()) {
   return cardsForTopic(topicId).filter((card) => card.trainingState !== "mastered" && card.nextReview <= date).length;
 }
@@ -629,8 +672,9 @@ function topicRisk(topic) {
   const accuracyGap = accuracy == null ? 10 : Math.max(0, topic.targetAccuracy - accuracy) * 1.5;
   const timeGap = avgSec == null ? 3 : Math.max(0, avgSec - topic.targetSeconds) / 3.5;
   const dueGap = topicDueCount(topic.id) * 9;
+  const memoryGap = memoryRiskForTopic(topic.id) / 4;
   const reviewGap = reviewFailureRate(topic.id) * 26;
-  return Math.round(baselineGap + priorityBoost + accuracyGap + timeGap + dueGap + reviewGap + recencyPenalty(topic.id));
+  return Math.round(baselineGap + priorityBoost + accuracyGap + timeGap + dueGap + memoryGap + reviewGap + recencyPenalty(topic.id));
 }
 
 function riskSeverity(risk) {
@@ -1186,6 +1230,7 @@ function renderDashboard() {
     }
   ];
   byId("metric-grid").innerHTML = metrics.map(renderMetric).join("");
+  renderMemoryCoach(assignment);
   renderLearningEngine(assignment);
   renderTopicTable();
   renderReadiness();
@@ -1199,6 +1244,42 @@ function renderMetric(metric) {
       <strong class="metric-value">${escapeHtml(metric.value)}</strong>
       <span class="metric-note">${escapeHtml(metric.note)}</span>
     </article>
+  `;
+}
+
+function renderMemoryCoach(assignment) {
+  const target = byId("memory-coach");
+  if (!target) return;
+  const due = dueCards();
+  const riskItems = memoryRiskCards();
+  const reviewCap = assignment.reviewCap || 6;
+  const rescueCount = Math.min(reviewCap, Math.max(due.length, riskItems.length));
+  const oldest = riskItems.reduce((max, item) => Math.max(max, dateDiff(cardLastTouch(item.card), todayISO())), 0);
+  const topTopics = riskItems
+    .slice(0, 4)
+    .reduce((map, item) => {
+      const key = item.card.topic;
+      map.set(key, (map.get(key) || 0) + 1);
+      return map;
+    }, new Map());
+  const topTopic = [...topTopics.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const topLabel = topTopic ? topicName(topTopic) : assignment.topic.name;
+  const atRisk = riskItems.filter((item) => item.recall < 0.86 || item.card.nextReview <= todayISO()).length;
+  const minutes = Math.max(0, Math.min(35, rescueCount * 2));
+  const tone = due.length ? "Rescue due cards first" : atRisk ? "Protect fading cards" : "Memory is calm";
+
+  target.innerHTML = `
+    <div class="memory-hero">
+      <span>${escapeHtml(tone)}</span>
+      <strong>${rescueCount}</strong>
+      <em>cards before new volume</em>
+    </div>
+    <div class="memory-facts">
+      <div><span>At risk</span><strong>${atRisk}</strong></div>
+      <div><span>Oldest gap</span><strong>${oldest}d</strong></div>
+      <div><span>Time box</span><strong>${minutes}m</strong></div>
+    </div>
+    <p>${escapeHtml(topLabel)} is the memory lane most worth protecting today.</p>
   `;
 }
 
@@ -2135,6 +2216,8 @@ function orderedReviewCards() {
     if (aDue !== bDue) return aDue ? -1 : 1;
     if (a.trainingState === "mastered" && b.trainingState !== "mastered") return 1;
     if (b.trainingState === "mastered" && a.trainingState !== "mastered") return -1;
+    const riskDelta = memoryRiskScore(b) - memoryRiskScore(a);
+    if (riskDelta !== 0) return riskDelta;
     return a.nextReview.localeCompare(b.nextReview);
   });
 }

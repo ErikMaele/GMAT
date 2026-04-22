@@ -1,4 +1,4 @@
-# GMAT Practice Optimizer V4
+# GMAT Practice Optimizer V6
 
 Local-first static website for Erik's TTP-first GMAT prep. The product goal is simple: open the app, start the right block, stay inside official GMAT pacing constraints, then convert the debrief into repair cards with as little typing as possible.
 
@@ -10,7 +10,7 @@ This folder is ready for GitHub Pages. Publish the repository from the root fold
 
 The live page uses Wikimedia image URLs for the Oxford hero and motivation images so the first page still renders even if the local `assets/` folder is not uploaded correctly.
 
-## V4 Coach Workflow
+## V6 Coach Workflow
 
 1. Open the Today tab.
 2. Click **Start Guided Block**.
@@ -22,9 +22,11 @@ The live page uses Wikimedia image URLs for the Oxford hero and motivation image
 
 ## Research-Backed Product Logic
 
-V4 combines GMAT-specific constraints with patterns from TTP, GMAT Club, UWorld, Magoosh, Anki-style spaced repetition, and active recall research:
+V6 combines GMAT-specific constraints with patterns from TTP, GMAT Club, UWorld, Magoosh, Anki-style spaced repetition, and active recall research:
 
 - Practice cockpit: the app runs the study block instead of only logging it afterward.
+- Memory coach: mistake cards get a retrievability estimate, so old errors are pulled forward before they decay.
+- Risk-first repair queue: due cards are sorted by memory risk, misses, uncertainty, and overdue pressure.
 - Official pacing protocol: Quant 21 q / 45 min, Verbal 23 q / 45 min, DI 20 q / 45 min.
 - Section constraints: Quant and Verbal are no-calculator; DI allows the on-screen calculator.
 - Review/edit discipline: the cockpit reminds Erik to reserve edits for high-uncertainty questions and never leave blanks.
@@ -34,7 +36,8 @@ V4 combines GMAT-specific constraints with patterns from TTP, GMAT Club, UWorld,
 - Confidence-based review: Again / Hard / Good / Easy ratings replace binary pass/fail.
 - Adaptive interleaving: daily TTP sets mix the highest-risk topics.
 - Review debt priority: due repairs outrank new practice on work nights.
-- Backup portability: V4 exports/imports guided blocks as well as sessions and repair cards.
+- Oxford blue interface: the main app now uses Oxford blue as the background system, with parchment panels and gold/sage/burgundy accents.
+- Backup portability: exports/imports guided blocks as well as sessions and repair cards.
 
 ## Current Product Logic
 

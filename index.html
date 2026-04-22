@@ -90,92 +90,103 @@
             <div class="routine-strip" id="routine-strip"></div>
           </article>
 
-          <div class="metric-grid" id="metric-grid"></div>
+          <aside class="status-column">
+            <div class="metric-grid" id="metric-grid"></div>
+            <article class="memory-card">
+              <div class="card-heading">
+                <span class="marker marker-green"></span>
+                <h3>Memory coach</h3>
+              </div>
+              <div id="memory-coach"></div>
+            </article>
+          </aside>
         </div>
 
-        <details class="detail-drawer">
-          <summary>
-            <span>Show the reasoning</span>
-            <strong>Adaptive mix, priorities, readiness, and Oxford fuel</strong>
-          </summary>
-
-        <section class="learning-grid" aria-label="Learning engine">
-          <article class="engine-card">
-            <div class="card-heading">
-              <span class="marker marker-green"></span>
-              <h3>Next action loop</h3>
-            </div>
-            <div class="loop-list" id="next-step-list"></div>
-          </article>
-          <article class="engine-card">
-            <div class="card-heading">
-              <span class="marker marker-amber"></span>
-              <h3>Adaptive TTP mix</h3>
-            </div>
-            <div class="mix-list" id="adaptive-mix"></div>
-          </article>
-          <article class="engine-card">
-            <div class="card-heading">
-              <span class="marker marker-coral"></span>
-              <h3>Momentum</h3>
-            </div>
-            <div class="momentum-card" id="momentum-card"></div>
-          </article>
-        </section>
-
-        <section class="dream-panel" aria-label="Oxford motivation">
-          <div class="dream-image">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/9/95/The_Christ_Church_Meadow_from_the_south_east.jpg"
-              alt="Christ Church Meadow in Oxford"
-            >
-          </div>
-          <div class="dream-copy">
-            <p class="eyebrow">Remember the prize</p>
-            <h2>Radcliffe Square, the meadow, the old libraries. Make the score feel smaller than the dream.</h2>
-            <p>
-              Wilde arrived at Magdalen as an undergraduate in 1874 and left as an Oxford figure. The point is not to admire the place from far away. It is to build the evidence that you belong there.
-            </p>
-          </div>
-          <figure class="alumni-card">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/e/e6/Oscar_Wilde_portrait_by_Napoleon_Sarony_-_albumen.jpg"
-              alt="Oscar Wilde portrait by Napoleon Sarony"
-            >
-            <figcaption>
-              <strong>Oscar Wilde</strong>
-              <span>Magdalen College, Oxford</span>
-            </figcaption>
-          </figure>
-        </section>
-
-        <section class="content-band">
-          <div class="section-title compact">
+        <section class="insight-sections" aria-label="Learning map">
+          <div class="section-title compact insight-title">
             <div>
-              <p class="eyebrow">Priority engine</p>
-              <h2>What needs reps now</h2>
+              <p class="eyebrow">Learning map</p>
+              <h2>Why the app picked this</h2>
             </div>
           </div>
-          <div class="topic-table" id="topic-table"></div>
-        </section>
 
-        <section class="split-layout">
-          <article class="chart-card">
-            <div class="card-heading">
-              <span class="marker marker-green"></span>
-              <h3>Readiness</h3>
+          <section class="learning-grid" aria-label="Learning engine">
+            <article class="engine-card">
+              <div class="card-heading">
+                <span class="marker marker-green"></span>
+                <h3>Next action loop</h3>
+              </div>
+              <div class="loop-list" id="next-step-list"></div>
+            </article>
+            <article class="engine-card">
+              <div class="card-heading">
+                <span class="marker marker-amber"></span>
+                <h3>Adaptive TTP mix</h3>
+              </div>
+              <div class="mix-list" id="adaptive-mix"></div>
+            </article>
+            <article class="engine-card">
+              <div class="card-heading">
+                <span class="marker marker-coral"></span>
+                <h3>Momentum</h3>
+              </div>
+              <div class="momentum-card" id="momentum-card"></div>
+            </article>
+          </section>
+
+          <section class="content-band">
+            <div class="section-title compact">
+              <div>
+                <p class="eyebrow">Priority engine</p>
+                <h2>What needs reps now</h2>
+              </div>
             </div>
-            <div class="readiness-chart" id="readiness-chart"></div>
-          </article>
-          <article class="chart-card">
-            <div class="card-heading">
-              <span class="marker marker-amber"></span>
-              <h3>Next mock</h3>
+            <div class="topic-table" id="topic-table"></div>
+          </section>
+
+          <section class="split-layout">
+            <article class="chart-card">
+              <div class="card-heading">
+                <span class="marker marker-green"></span>
+                <h3>Readiness</h3>
+              </div>
+              <div class="readiness-chart" id="readiness-chart"></div>
+            </article>
+            <article class="chart-card">
+              <div class="card-heading">
+                <span class="marker marker-amber"></span>
+                <h3>Next mock</h3>
+              </div>
+              <div class="next-mock" id="next-mock"></div>
+            </article>
+          </section>
+
+          <section class="dream-panel" aria-label="Oxford motivation">
+            <div class="dream-image">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/9/95/The_Christ_Church_Meadow_from_the_south_east.jpg"
+                alt="Christ Church Meadow in Oxford"
+              >
             </div>
-            <div class="next-mock" id="next-mock"></div>
-          </article>
+            <div class="dream-copy">
+              <p class="eyebrow">Remember the prize</p>
+              <h2>Radcliffe Square, the meadow, the old libraries. Make the score feel smaller than the dream.</h2>
+              <p>
+                Wilde arrived at Magdalen as an undergraduate in 1874 and left as an Oxford figure. The point is not to admire the place from far away. It is to build the evidence that you belong there.
+              </p>
+            </div>
+            <figure class="alumni-card">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/e/e6/Oscar_Wilde_portrait_by_Napoleon_Sarony_-_albumen.jpg"
+                alt="Oscar Wilde portrait by Napoleon Sarony"
+              >
+              <figcaption>
+                <strong>Oscar Wilde</strong>
+                <span>Magdalen College, Oxford</span>
+              </figcaption>
+            </figure>
+          </section>
         </section>
-        </details>
       </section>
 
       <section class="tab-panel" id="coach" aria-labelledby="coach-title">
